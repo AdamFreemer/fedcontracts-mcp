@@ -45,7 +45,14 @@ CI (`.github/workflows/ci.yml`) runs all four on pushes to `master` and on PRs.
 
 ## Loading data
 
-_Filled in as of Milestone 4._ `bin/rails sync:backfill` / `sync:incremental`.
+```sh
+DAYS=30 bin/rails sync:backfill   # quick local dataset (~3.3k awards, ~30s)
+bin/rails sync:backfill           # full 365 days (~54k awards)
+bin/rails sync:incremental        # last 7 days; what Heroku Scheduler runs daily
+```
+
+`SYNC_NAICS=541511,541512` overrides the default IT/software NAICS set. Each run writes a `sync_runs` row; failures keep the error there.
+DoD data lags ~90 days, so recent windows have little or no DoD.
 
 ## Connecting an MCP client
 
@@ -59,7 +66,8 @@ _Filled in as of Milestone 6._ MCP Inspector: `npx @modelcontextprotocol/inspect
 - `app/queries/`: query objects (business logic)
 - `app/services/usaspending/client.rb`: Faraday client for `spending_by_award` (retries, 25s timeout, page-based; max 50k results per window)
 - `app/services/usaspending/award_mapper.rb`: raw result -> Agency/Recipient/Award attributes keyed by natural keys
-- `app/services/`: `AwardSync` (M4)
+- `app/services/award_sync.rb`: fetches 30-day windows, upserts agencies -> recipients -> awards per page, records `sync_runs`
+- `lib/tasks/sync.rake`: `sync:backfill`, `sync:incremental`
 - `spec/cassettes/usaspending/`: recorded real API responses; `cassette_body(name)` in specs reads one
 
 ## Conventions

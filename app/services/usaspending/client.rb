@@ -4,6 +4,7 @@ module Usaspending
   class Client
     BASE_URL = "https://api.usaspending.gov".freeze
     SPENDING_BY_AWARD_PATH = "/api/v2/search/spending_by_award/".freeze
+    TOPTIER_AGENCIES_PATH = "/api/v2/references/toptier_agencies/".freeze
     CONTRACT_AWARD_TYPES = %w[A B C D].freeze
     MAX_LIMIT = 100
     # The API rejects page * limit beyond this; callers must narrow the window.
@@ -41,14 +42,15 @@ module Usaspending
       @timeout = timeout
     end
 
-    # Contracts whose activity falls in [start_date, end_date] (API default date semantics:
-    # latest action on/after start_date, signed on/before end_date).
+    # Contracts whose latest action date falls in [start_date, end_date]. Using
+    # date_type "action_date" makes adjacent windows partition the results exactly,
+    # which lets the sync chunk a long range under MAX_RESULT_WINDOW.
     def spending_by_award(start_date:, end_date:, naics_codes:, page: 1, limit: MAX_LIMIT)
       limit = limit.clamp(1, MAX_LIMIT)
       body = {
         filters: {
           award_type_codes: CONTRACT_AWARD_TYPES,
-          time_period: [ { start_date: start_date.iso8601, end_date: end_date.iso8601 } ],
+          time_period: [ { start_date: start_date.iso8601, end_date: end_date.iso8601, date_type: "action_date" } ],
           naics_codes: naics_codes
         },
         fields: FIELDS,
@@ -60,6 +62,15 @@ module Usaspending
 
       response = connection.post(SPENDING_BY_AWARD_PATH, body)
       Page.new(results: response.body.fetch("results"), has_next: response.body.dig("page_metadata", "hasNext") == true)
+    rescue Faraday::Error => e
+      raise Error, "USAspending request failed: #{e.class}: #{e.response_status || e.message}"
+    rescue KeyError, NoMethodError => e
+      raise Error, "Unexpected USAspending response shape: #{e.message}"
+    end
+
+    # All toptier agencies: [{ "toptier_code" => "070", "abbreviation" => "DHS", ... }, ...]
+    def toptier_agencies
+      connection.get(TOPTIER_AGENCIES_PATH).body.fetch("results")
     rescue Faraday::Error => e
       raise Error, "USAspending request failed: #{e.class}: #{e.response_status || e.message}"
     rescue KeyError, NoMethodError => e

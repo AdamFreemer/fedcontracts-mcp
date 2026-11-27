@@ -17,12 +17,21 @@ RSpec.describe Usaspending::Client do
     end
   end
 
+  describe "#toptier_agencies", vcr: { cassette_name: "usaspending/toptier_agencies" } do
+    it "returns agencies with toptier codes and abbreviations" do
+      agencies = client.toptier_agencies
+
+      expect(agencies.size).to be > 100
+      expect(agencies.find { |a| a["toptier_code"] == "070" }).to include("abbreviation" => "DHS")
+    end
+  end
+
   describe "request shape" do
     it "sends contract type codes, the window, NAICS, and a sort field that is also in fields" do
       stub = stub_request(:post, url).with { |req|
         body = JSON.parse(req.body)
         body["filters"]["award_type_codes"] == %w[A B C D] &&
-          body["filters"]["time_period"] == [ { "start_date" => "2026-11-13", "end_date" => "2026-11-27" } ] &&
+          body["filters"]["time_period"] == [ { "start_date" => "2026-11-13", "end_date" => "2026-11-27", "date_type" => "action_date" } ] &&
           body["filters"]["naics_codes"] == args[:naics_codes] &&
           body["fields"].include?(body["sort"]) &&
           body["limit"] == 100 && body["page"] == 2

@@ -4,7 +4,7 @@ _Last updated: 2026-11-27_
 
 ## Current milestone
 
-**Milestone 3** — done. Next: Milestone 4.
+**Milestone 4** — done. Next: Milestone 5.
 
 ## Milestones
 
@@ -14,7 +14,7 @@ _Last updated: 2026-11-27_
 | 1 | `rails new`, Postgres, RSpec, gems, `/up` | done |
 | 2 | Migrations + models | done |
 | 3 | `Usaspending::Client`, cassette, `AwardMapper` | done |
-| 4 | `AwardSync` + rake tasks, 30-day local backfill | not started |
+| 4 | `AwardSync` + rake tasks, 30-day local backfill | done |
 | 5 | Query objects + specs | not started |
 | 6 | MCP endpoint + `search_awards`, verified in Inspector + Claude | not started |
 | 7 | Remaining three tools | not started |
@@ -26,11 +26,7 @@ _Last updated: 2026-11-27_
 
 ## Next step
 
-Milestone 4: `AwardSync` + `sync:backfill` / `sync:incremental`, then a 30-day local backfill and eyeball the data. Must:
-- Chunk the time window (e.g. 30-day slices) to stay under the API's 50,000-result paging cap (risk 7).
-- Upsert agencies and recipients first, then awards with resolved FKs; count and skip `AwardMapper::InvalidRecord`.
-- Fill agency abbreviations from `/api/v2/references/toptier_agencies/` (risk 3).
-- Read NAICS from ENV `SYNC_NAICS` with the spec default.
+Milestone 5: query objects in `app/queries/` with specs, one per tool (search, recent, expiring, company profile). Add trigram indexes on `recipients.name` and `agencies.name` for fuzzy matching. Agency matching should accept the abbreviation (`DHS`) or a name fragment.
 
 ## Blockers
 
@@ -44,7 +40,9 @@ None.
 4. **`mcp` gem version / API.** Pinned `~> 1.11` (1.11.0 current). Confirm the transport and error shape at M6.
 5. **Heroku Ruby version.** No `ruby` directive in the Gemfile, so `Gemfile.lock` has no `RUBY VERSION`. Confirm at M10 that the Heroku buildpack picks up 3.3.14 (add `ruby file: ".ruby-version"` if not).
 6. **Descriptions are truncated to 250 chars** by the search API. Keyword search only sees that prefix. Acceptable for v1; mention it in the `search_awards` description.
-7. **Paging cap.** Page-based paging fails with 422 past 50,000 results (`page * limit`). A 365-day IT backfill is ~54k contracts. The cursor alternative (`last_record_*`) is labelled experimental, so the sync chunks the window instead.
+7. **Paging cap — handled at M4.** Page-based paging fails with 422 past 50,000 results. The sync uses 30-day windows with `date_type: "action_date"`, which partition exactly (12 monthly counts summed to the 365-day total of 53,914; largest window ~7.7k).
+8. **DoD has no recent data.** The 30-day local backfill had 0 DoD awards (90-day publication delay). Demo prompts should use civilian agencies (DHS, HHS, VA, Treasury), and tool descriptions must state the DoD delay.
+9. **"Recent" vs. stored.** Of 3,297 awards with activity in the last 30 days, only 570 were signed in that window; the rest are older contracts with recent modifications (signed as far back as 2001). `recent_awards` must filter on `action_date` (signed), not just "is in the DB".
 
 ## Decisions log
 
@@ -53,7 +51,7 @@ None.
 - 2026-11-27: Planned `rails new . --api -d postgresql --skip-solid --skip-kamal --skip-test` (Heroku, single DB, RSpec).
 - 2026-11-27: Claude tooling at project scope: `mcp-server-dev` and `playwright` plugins, Heroku MCP (`heroku mcp:start`) in `.mcp.json`. Use `gh` CLI instead of the GitHub MCP. No extra design plugins (`frontend-design` is enabled at user level).
 - 2026-11-27: Heroku: Basic dyno or higher (Eco sleeps); Essential-0 Postgres should be enough.
-- 2026-11-27: Rails 8.1.3 (current gem) rather than pinning 8.0.
+- 2026-11-27: Rails 8.1 rather than pinning 8.0. (`rails new` used 8.1.3; the lockfile resolved to 8.1.4.1 under `~> 8.1.3`.)
 - 2026-11-27: Ruby 3.3.14. Brakeman flagged a critical RCE in 3.3.6 (CVE-2026-132825). Built with RVM against Homebrew `openssl@3`: the default build mixed OpenSSL 1.1 libs with newer headers and failed.
 - 2026-11-27: Kept the generated Rails CI (brakeman, bundler-audit, rubocop) and added an RSpec job. Kept the generated Dockerfile (unused on Heroku buildpacks).
 - 2026-11-27: M1 pushed; CI green on all three jobs (scan_ruby, lint, test).
@@ -61,3 +59,6 @@ None.
 - 2026-11-27: M3 `Award.action_date` = USAspending `Base Obligation Date` (date signed). The search API doesn't expose the latest transaction date, and the signed date is the better "who just won work" signal for `recent_awards`. The raw record keeps `Last Modified Date`.
 - 2026-11-27: M3 sync request omits `date_type`, so the API default applies: latest action on/after the window start, signed on/before its end. Sort is `Base Obligation Date` desc (stable, unlike `Last Modified Date`).
 - 2026-11-27: M3 retries on 429/5xx/timeouts (4 retries, exponential backoff with jitter); 4xx like 422 fail fast. Cassettes strip `Set-Cookie`.
+- 2026-11-27: M4 sync uses `date_type: "action_date"` (not the API default). Same set of contracts over the full range, but adjacent windows don't overlap: the default would fetch ~240k records to get 54k.
+- 2026-11-27: M4 agency abbreviations come from `/api/v2/references/toptier_agencies/`, fetched once per run. National Gallery of Art and Smithsonian have none upstream.
+- 2026-11-27: M4 30-day local backfill: 3,297 awards (matches the API count exactly), 1,066 recipients, 54 agencies, 0 skipped, ~29s. Re-running is idempotent.
