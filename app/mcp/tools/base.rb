@@ -14,6 +14,14 @@ module Tools
         )
       end
 
+      def unmatched_agency(agency)
+        error("No agency matched #{agency.inspect}. Try an abbreviation (DHS, VA), a sub-agency acronym (USCIS), or part of the name.")
+      end
+
+      def agency_note(result)
+        result.matched_agencies.any? ? " (agency: #{result.matched_agencies.join(', ')})" : ""
+      end
+
       def error(message)
         MCP::Tool::Response.new([ { type: "text", text: message } ], error: true)
       end
@@ -38,6 +46,7 @@ module Tools
           signed_date: award.action_date&.iso8601,
           start_date: award.start_date&.iso8601,
           end_date: award.end_date&.iso8601,
+          potential_end_date: award.potential_end_date&.iso8601,
           naics_code: award.naics_code,
           naics_description: award.naics_description,
           psc_code: award.psc_code,

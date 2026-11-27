@@ -2,7 +2,9 @@
 # into agencies, recipients, and awards. Records each run in sync_runs.
 class AwardSync
   DEFAULT_NAICS = %w[541511 541512 541513 541519 518210].freeze
-  BACKFILL_DAYS = 365
+  # Two years: a contract in its final option year can go 12-18 months without
+  # any action, and those are exactly the ones expiring_contracts must catch.
+  BACKFILL_DAYS = 730
   INCREMENTAL_DAYS = 7
   # Monthly slices stay far under the API's 50k paging cap (largest seen: ~7.7k).
   WINDOW_DAYS = 30

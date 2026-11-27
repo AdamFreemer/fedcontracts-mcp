@@ -5,6 +5,7 @@ module Usaspending
     BASE_URL = "https://api.usaspending.gov".freeze
     SPENDING_BY_AWARD_PATH = "/api/v2/search/spending_by_award/".freeze
     TOPTIER_AGENCIES_PATH = "/api/v2/references/toptier_agencies/".freeze
+    AWARD_PATH = "/api/v2/awards/%s/".freeze
     CONTRACT_AWARD_TYPES = %w[A B C D].freeze
     MAX_LIMIT = 100
     # The API rejects page * limit beyond this; callers must narrow the window.
@@ -77,6 +78,13 @@ module Usaspending
       raise Error, "Unexpected USAspending response shape: #{e.message}"
     end
 
+    # Full award detail, including period_of_performance.potential_end_date.
+    def award(generated_internal_id)
+      connection.get(format(AWARD_PATH, ERB::Util.url_encode(generated_internal_id))).body.to_h
+    rescue Faraday::Error => e
+      raise Error, "USAspending request failed: #{e.class}: #{e.response_status || e.message}"
+    end
+
     private
 
     def connection
@@ -87,7 +95,7 @@ module Usaspending
           interval: @retry_interval,
           backoff_factor: 2,
           interval_randomness: 0.5,
-          methods: %i[post],
+          methods: %i[get post],
           retry_statuses: [ 429, 500, 502, 503, 504 ],
           # raise_error turns 429/5xx into these before retry sees the status, so list them too.
           exceptions: Faraday::Retry::Middleware::DEFAULT_EXCEPTIONS +

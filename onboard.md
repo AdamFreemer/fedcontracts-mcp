@@ -45,9 +45,10 @@ CI (`.github/workflows/ci.yml`) runs all four on pushes to `master` and on PRs.
 ## Loading data
 
 ```sh
-DAYS=30 bin/rails sync:backfill   # quick local dataset (~3.3k awards, ~30s)
-bin/rails sync:backfill           # full 365 days (~54k awards)
-bin/rails sync:incremental        # last 7 days; what Heroku Scheduler runs daily
+DAYS=30 bin/rails sync:backfill   # quick local dataset (~3.3k awards, ~30s, plus end-date lookups)
+bin/rails sync:backfill           # full 730 days (~110k awards); first end-date enrichment takes a while
+bin/rails sync:incremental        # last 7 days + end dates for changed awards; what Heroku Scheduler runs daily
+bin/rails sync:end_dates          # just the potential-end-date lookups (EndDateEnricher)
 ```
 
 `SYNC_NAICS=541511,541512` overrides the default IT/software NAICS set. Each run writes a `sync_runs` row; failures keep the error there.
@@ -86,6 +87,7 @@ Deployed hostnames must be listed in `MCP_ALLOWED_HOSTS` or the transport return
 - `app/services/usaspending/client.rb`: Faraday client for `spending_by_award` (retries, 25s timeout, page-based; max 50k results per window)
 - `app/services/usaspending/award_mapper.rb`: raw result -> Agency/Recipient/Award attributes keyed by natural keys
 - `app/services/award_sync.rb`: fetches 30-day windows, upserts agencies -> recipients -> awards per page, records `sync_runs`
+- `app/services/end_date_enricher.rb`: fills `awards.potential_end_date` from award detail (threads, re-checks on upstream change)
 - `lib/tasks/sync.rake`: `sync:backfill`, `sync:incremental`
 - `spec/cassettes/usaspending/`: recorded real API responses; `cassette_body(name)` in specs reads one
 

@@ -10,13 +10,16 @@ module QueryFixtures
     excella = create(:recipient, name: "EXCELLA, LLC", uei: "KMKUAFKECJ83", recipient_key: "excella-C")
     oddball = create(:recipient, name: "ODDBALL, INC.", uei: "MHNFNJ1J5RF5", recipient_key: "oddball-C")
     agile_six = create(:recipient, name: "AGILE SIX APPLICATIONS, INC", uei: "AGILESIX0001", recipient_key: "agile-six-C")
+    accenture = create(:recipient, name: "ACCENTURE FEDERAL SERVICES LLC", uei: "C47BNA8GM833", recipient_key: "accenture-C")
+    checked = TODAY.to_time - 3600
 
     {
-      dhs:, va:, doj:, excella:, oddball:, agile_six:,
+      dhs:, va:, doj:, excella:, oddball:, agile_six:, accenture:,
       didit: create(:award, piid: "70SBUR22F00000004", recipient: excella, awarding_agency: dhs,
                     awarding_sub_agency: "U.S. Citizenship and Immigration Services",
                     description: "DIGITAL INNOVATION AND DEVELOPMENT (DID(IT)) II SUPPORT",
                     amount: 65_538_173.03, action_date: TODAY - 20, start_date: TODAY - 20, end_date: TODAY + 60,
+                    potential_end_date: TODAY + 60, details_checked_at: checked,
                     naics_code: "541512", place_of_performance_state: "VA"),
       fema_cloud: create(:award, recipient: excella, awarding_agency: dhs,
                          awarding_sub_agency: "Federal Emergency Management Agency",
@@ -25,13 +28,19 @@ module QueryFixtures
       va_platform: create(:award, piid: "36C10B22F0126", recipient: oddball, awarding_agency: va,
                           awarding_sub_agency: "Department of Veterans Affairs",
                           description: "VA.GOV PLATFORM AWARD AND OPTIONAL TASK EXERCISE", amount: 71_525_998,
-                          action_date: TODAY - 5, end_date: TODAY + 170, naics_code: "541511", place_of_performance_state: "DC"),
+                          action_date: TODAY - 5, end_date: TODAY + 170, potential_end_date: TODAY + 900, details_checked_at: checked,
+                          naics_code: "541511", place_of_performance_state: "DC"),
       va_cms: create(:award, recipient: agile_six, awarding_agency: va, awarding_sub_agency: "Department of Veterans Affairs",
                      description: "VETERAN-FACING SERVICES CONTENT MANAGEMENT SYSTEM", amount: 8_333_381,
                      action_date: TODAY - 10, end_date: TODAY + 10, naics_code: "541519"),
       va_old: create(:award, recipient: oddball, awarding_agency: va, awarding_sub_agency: "Department of Veterans Affairs",
                      description: "VA.GOV NOTIFY", amount: 8_798_838,
                      action_date: Date.new(2022, 1, 25), end_date: TODAY - 1, naics_code: "541519"),
+      # DGIB-like: current period lapsed, options run into the window.
+      dgib: create(:award, piid: "36C10D21N0007", recipient: accenture, awarding_agency: va,
+                   awarding_sub_agency: "Department of Veterans Affairs", description: "DIGITAL GI BILL DELIVERY SERVICES",
+                   amount: 494_132_154.20, action_date: Date.new(2021, 3, 11), start_date: Date.new(2021, 3, 11),
+                   end_date: TODAY - 400, potential_end_date: TODAY + 100, details_checked_at: checked, naics_code: "541512"),
       doj_small: create(:award, recipient: agile_six, awarding_agency: doj, awarding_sub_agency: "Federal Bureau of Investigation",
                         description: "SOFTWARE LICENSES", amount: 50_000,
                         action_date: TODAY - 2, end_date: TODAY + 30, naics_code: "541519")

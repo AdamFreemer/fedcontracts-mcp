@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_28_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_28_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -43,12 +43,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_28_000000) do
     t.jsonb "raw", default: {}, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.date "potential_end_date"
+    t.datetime "details_checked_at"
     t.index ["action_date"], name: "index_awards_on_action_date"
     t.index ["awarding_agency_id"], name: "index_awards_on_awarding_agency_id"
     t.index ["description"], name: "index_awards_on_description", opclass: :gin_trgm_ops, using: :gin
     t.index ["end_date"], name: "index_awards_on_end_date"
     t.index ["generated_internal_id"], name: "index_awards_on_generated_internal_id", unique: true
     t.index ["naics_code"], name: "index_awards_on_naics_code"
+    t.index ["potential_end_date"], name: "index_awards_on_potential_end_date"
     t.index ["recipient_id"], name: "index_awards_on_recipient_id"
     t.index ["start_date"], name: "index_awards_on_start_date"
   end

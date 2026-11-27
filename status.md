@@ -4,7 +4,7 @@ _Last updated: 2026-11-27_
 
 ## Current milestone
 
-**Milestone 6** — done. Next: Milestone 7.
+**Milestone 7** — done. Next: Milestone 8.
 
 ## Milestones
 
@@ -17,7 +17,7 @@ _Last updated: 2026-11-27_
 | 4 | `AwardSync` + rake tasks, 30-day local backfill | done |
 | 5 | Query objects + specs | done |
 | 6 | MCP endpoint + `search_awards`, verified in Inspector + Claude | done |
-| 7 | Remaining three tools | not started |
+| 7 | Remaining three tools | done |
 | 8 | rack-attack, input clamping, error handling | not started |
 | 9 | Landing page | not started |
 | 10 | Heroku deploy, backfill, scheduler, prod smoke test | not started |
@@ -26,7 +26,7 @@ _Last updated: 2026-11-27_
 
 ## Next step
 
-Milestone 7: `recent_awards`, `expiring_contracts`, `company_profile` tools over the M5 queries, each with request specs (happy path + bad input), then re-run the headless Claude check with `examples.md` prompts. Decide risk 1 and 11 (expiring coverage, current vs. potential end date) with Adam first: options in plain terms.
+Milestone 8: rack-attack throttle on `/mcp` (60/min/IP), optional `MCP_BEARER_TOKEN`, review input clamping and error handling end to end. Most clamping and error shaping already landed in M5–M7; M8 is mainly the throttle, the token, and a pass for gaps.
 
 ## Blockers
 
@@ -34,7 +34,7 @@ None.
 
 ## Open questions / risks
 
-1. **`expiring_contracts` coverage gap — confirmed at M3.** The award search can't filter on period-of-performance end (`date_type` is only `action_date`, `date_signed`, `last_modified_date`, `new_awards_only`). Contracts ending soon with no action in the sync window are missing. Decide at M7: a caveat in the tool description (cheapest), or a longer backfill window.
+1. **`expiring_contracts` coverage gap — mitigated at M7.** The award search can't filter on period-of-performance end. DID(IT) II proved the gap: its last action was 2025-11-20, one week outside a 365-day window, and it ends 2026-10-15. Backfill is now 730 days, since a contract in its final option year can go 12–18 months without an action. Contracts quiet for 2+ years are still missed; the tool description says so.
 2. **Recipient upsert key can be null.** Resolved in schema: non-null unique `recipient_key` (USAspending ID, else normalized name). The mapper (M3) owns the normalization.
 3. **Agency key — resolved at M3.** `Awarding Agency Code` is the toptier code (e.g. `070` = DHS). The API does not return abbreviations, so "DHS"-style matching needs `/api/v2/references/toptier_agencies/` in the sync (M4).
 4. **`mcp` gem — resolved at M6.** 1.11's `StreamableHTTPTransport` supports `stateless: true` + `enable_json_response: true`; mounted directly as a Rack app. Argument validation against the input schema is built in (tool-level `isError`); unexpected exceptions become a generic JSON-RPC error with no message (CWE-209), reported via `exception_reporter`.
@@ -44,7 +44,7 @@ None.
 8. **DoD has no recent data.** The 30-day local backfill had 0 DoD awards (90-day publication delay). Demo prompts should use civilian agencies (DHS, HHS, VA, Treasury), and tool descriptions must state the DoD delay.
 9. **"Recent" vs. stored.** Of 3,297 awards with activity in the last 30 days, only 570 were signed in that window; the rest are older contracts with recent modifications (signed as far back as 2001). `recent_awards` must filter on `action_date` (signed), not just "is in the DB".
 10. **Company acronyms aren't matched.** `company_profile(name: "GDIT")` finds nothing; the recipient is "GENERAL DYNAMICS INFORMATION TECHNOLOGY". Fine for v1; tool description should ask for the company's legal name.
-11. **Current vs. potential end date.** `end_date` is the current period-of-performance end. Contracts with unexercised options look "expiring" or even "ended" while they actually run for years (DGIB: current end 2025-09-29, potential end 2030-09-29, still modified in 2026). `spending_by_award` doesn't return the potential end date; `/api/v2/awards/<id>/` does (`period_of_performance.potential_end_date`). Decide at M7: caveat only, or enrich expiring candidates with the potential end date (an extra API call per award, at sync time only).
+11. **Current vs. potential end date — resolved at M7.** A sample of 40 contracts "expiring in 180 days" had 19 with option years remaining. `EndDateEnricher` fetches `potential_end_date` from `/api/v2/awards/<id>/` for awards >= $100k ending between 2 years ago and 1 year ahead, re-checking only when USAspending's Last Modified Date moves. `expiring_contracts` labels each result `final_period` / `options_remaining` / `unknown` and supports `recompete_only`. First enrichment is a long run (~10 lookups/s, 4 threads); daily runs only touch changed awards.
 12. **Subawards (v2 candidate, strong).** Spec lists subawards as a v1 non-goal. DGIB shows why they matter for this audience: 47% of obligations ($233M) went to 20+ small subs, and that's where many engineers are employed. Small firms looking for primes to team with are a likely user group too. Bear case: subaward data is self-reported by primes, first tier only, late and patchy, and it needs a second sync, table, and tool. `spending_by_award` supports `subawards: true` mode, so the client mostly carries over. Don't start before v1 ships.
 
 ## Decisions log
@@ -74,3 +74,7 @@ None.
 - 2026-11-27: M6 tool responses: `structuredContent` plus two text blocks (one-line summary, same JSON). The gem doesn't text-serialize Hash structured content, and some clients only read text. Every payload has `data_freshness`. Awards expose `signed_date` (= `action_date`) to avoid the ambiguous name.
 - 2026-11-27: M6 input schemas are closed (`additionalProperties: false`) with explicit bounds, so bad input is a readable tool error. Unmatched agency is a tool error with guidance; no matches is an empty success.
 - 2026-11-27: M6 verified with curl, MCP Inspector CLI, and a headless Claude Code session (`claude -p --mcp-config`): asked about DHS software/cloud awards without naming the tool, Claude called `search_awards(agency: DHS, days: 30, limit: 100)` and separated license resales from staffing signals.
+- 2026-11-27: M7 (Adam's call) fetch the real end date rather than caveat-only, after the 19/40 sample. Backfill window raised to 730 days because DID(IT) II fell just outside 365.
+- 2026-11-27: M7 `expiring_contracts` matches on current end OR potential end in the window, ordered by the event date (current end if still ahead, else potential end). DGIB-style contracts (current period lapsed, options running) appear when their potential end nears.
+- 2026-11-27: M7 tool descriptions point at each other ("for X prefer Y"), state the 2-year window, the DoD lag, prime-only scope, and how to read resale vs. services awards. `company_profile` returns `ambiguous` with candidates as a normal result (not an error) and tells the client to ask the user.
+- 2026-11-27: 365-day backfill: 53,897 awards + 17 skipped (Treasury bureau orders with no agency code upstream) = API count 53,914. ~8 min.

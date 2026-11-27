@@ -5,16 +5,18 @@
 # A fresh server and transport per request keeps this stateless and safe under
 # code reloading in development; construction is cheap.
 class McpEndpoint
-  TOOLS = [ Tools::SearchAwards ].freeze
+  TOOLS = [ Tools::SearchAwards, Tools::RecentAwards, Tools::ExpiringContracts, Tools::CompanyProfile ].freeze
 
   INSTRUCTIONS = <<~TEXT.freeze
     Federal contract awards from USAspending.gov, focused on IT and software
     (NAICS 541511, 541512, 541513, 541519, 518210). Use it to find who is winning
     government tech work, which agencies are buying, and which contracts are
     ending soon: signals for hiring, teaming, and market research. Data is
-    synced daily from USAspending into this server's database; every response
-    includes data_freshness. Department of Defense data publishes with a ~90 day
-    delay, so recent DoD activity is sparse. Prime contracts only (no subawards).
+    synced daily from USAspending into this server's database and covers prime
+    contracts with activity in about the last 2 years; every response includes
+    data_freshness. Department of Defense data publishes with a ~90 day delay, so
+    recent DoD activity is sparse. Prime contracts only: subcontractors, who do
+    much of the hiring on large programs, are not included.
   TEXT
 
   def self.call(env)
