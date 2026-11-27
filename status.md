@@ -44,7 +44,8 @@ None.
 8. **DoD has no recent data.** The 30-day local backfill had 0 DoD awards (90-day publication delay). Demo prompts should use civilian agencies (DHS, HHS, VA, Treasury), and tool descriptions must state the DoD delay.
 9. **"Recent" vs. stored.** Of 3,297 awards with activity in the last 30 days, only 570 were signed in that window; the rest are older contracts with recent modifications (signed as far back as 2001). `recent_awards` must filter on `action_date` (signed), not just "is in the DB".
 10. **Company acronyms aren't matched.** `company_profile(name: "GDIT")` finds nothing; the recipient is "GENERAL DYNAMICS INFORMATION TECHNOLOGY". Fine for v1; tool description should ask for the company's legal name.
-11. **GIBCT contract not identified** (`examples.md` §2). Need Adam to confirm which VA contract or vendor covers it.
+11. **Current vs. potential end date.** `end_date` is the current period-of-performance end. Contracts with unexercised options look "expiring" or even "ended" while they actually run for years (DGIB: current end 2025-09-29, potential end 2030-09-29, still modified in 2026). `spending_by_award` doesn't return the potential end date; `/api/v2/awards/<id>/` does (`period_of_performance.potential_end_date`). Decide at M7: caveat only, or enrich expiring candidates with the potential end date (an extra API call per award, at sync time only).
+12. **Subawards (v2 candidate, strong).** Spec lists subawards as a v1 non-goal. DGIB shows why they matter for this audience: 47% of obligations ($233M) went to 20+ small subs, and that's where many engineers are employed. Small firms looking for primes to team with are a likely user group too. Bear case: subaward data is self-reported by primes, first tier only, late and patchy, and it needs a second sync, table, and tool. `spending_by_award` supports `subawards: true` mode, so the client mostly carries over. Don't start before v1 ships.
 
 ## Decisions log
 
@@ -68,3 +69,4 @@ None.
 - 2026-11-27: M5 company matching groups recipient rows by normalized name (Leidos has 5 UEIs under one name). Exact UEI > exact name > substring > trigram. Trigram-only matches are always returned as candidates, never as a profile ("Excella" must not silently become "Excelous").
 - 2026-11-27: M5 `recent_awards` and `search_awards` window on `action_date` (signed). `expiring_contracts` on `end_date`. Company trend = last 8 calendar quarters by signed date, zero-filled.
 - 2026-11-27: Added `examples.md`: DID(IT) II (Excella/USCIS, ended 2026-10-15) and GIBCT (contract TBD) as reference cases for specs and demos.
+- 2026-11-27: GIBCT confirmed as part of Accenture Federal's DGIB contract `36C10D21N0007` (VA/VBA). `examples.md` §2 updated with subaward data. Exposed risks 11 (current vs. potential end date) and 12 (subawards).

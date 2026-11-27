@@ -48,34 +48,55 @@ follow-on winner needs to staff up fast, often by hiring the incumbent's people.
 
 ---
 
-## 2. VA GI Bill Comparison Tool (GIBCT)
+## 2. VA GI Bill Comparison Tool (GIBCT), under Digital GI Bill (DGIB)
 
-**Status: contract not yet identified.** No VA award mentions "GI Bill
-Comparison" or "GIBCT". GIBCT is a VA.gov tool, so it's likely funded under a
-broader VA.gov or education-services contract. Candidates found:
+GIBCT is a small page on VA.gov. It's maintained as part of Accenture
+Federal's Digital GI Bill delivery contract, not as a contract of its own.
+No award mentions "GIBCT" or "GI Bill Comparison", which is typical: product
+teams sit inside large program contracts.
 
-| Award | Recipient | Description | Period | Obligated |
-|---|---|---|---|---|
-| `36C10D21N0007` | Accenture Federal Services | Digital GI Bill Delivery Services | 2021-03-11 to 2025-09-29 | $494.1M |
-| `36C10B22N00050002` | Coforma | VA.gov Product Teams: Benefits Crew | 2022-04-01 to 2024-03-31 | $9.7M |
-| `36C10B23N00050005` | Coforma | VA.gov Benefits and Claims | 2023-03-28 to 2025-04-27 | $9.5M |
-| `36C10B22F0126` | Oddball | VA.gov Platform | 2022-05-13 to 2026-05-12 | $71.5M |
-| `36C10B25N00070011` | OddCore JV | VA.gov Core Veteran Experiences | 2025-09-29 to 2027-08-28 | $7.7M |
+| Field | Value |
+|---|---|
+| Award | `36C10D21N0007` (order under VA T4NG IDIQ `VA11816D1013`) |
+| URL | https://www.usaspending.gov/award/CONT_AWD_36C10D21N0007_3600_VA11816D1013_3600 |
+| Prime | Accenture Federal Services LLC |
+| Agency | VA / Veterans Benefits Administration (office 36C10D) |
+| Obligated | $494.1M (reported ceiling ~$542M) |
+| Signed | 2021-03-11 |
+| Current period end | **2025-09-29** (USAspending `end_date`) |
+| Potential end (all options) | **2030-09-29** |
+| Last modified | 2026-02-24 (still active) |
+| NAICS | 541512 |
+| Subawards | **493 reports, $233.1M**, about 47% of obligations |
 
-Next: confirm which contract (or which team/vendor) covers GIBCT, then fill in
-this section the same way as DID(IT).
+Largest reported subcontractors (first page of subaward reports, by amount):
+Lefant ($80.3M), Four Points Technology ($22.3M), SteerBridge Strategies
+($22.2M), V3Gate ($18.8M), Greenbrier Government Solutions ($14.8M), Systems
+Engineering Solutions ($14.1M), Knowledge Vortex ($11.4M), Morgan 6 ($8.1M),
+DynaVet Solutions ($6.0M), Gray Digital ($3.4M). Latest report: 2025-06.
 
-**What it shows either way:** VA digital work is split across many mid-size
-product-team orders (often $5–20M, 1–2 years) on a shared vehicle. That means
-frequent recompetes and many small vendors (Agile Six, Coforma, Oddball, Ad
-Hoc-style shops), which suits job seekers who want small-company agile teams.
+**What it shows:**
+- **The current end date misleads.** The award "ended" in 2025 by `end_date`
+  but runs to 2030 through option years. `expiring_contracts` keys on the
+  current end, so it can flag option renewals as if they were recompetes, and
+  it misses contracts like this one whose current end has already passed.
+- **Subs do much of the hiring.** Nearly half the money flows to small
+  businesses, many service-disabled veteran-owned. A job seeker on a product
+  team like GIBCT is often employed by a sub, not by Accenture. Our v1 data
+  (prime awards only) shows Accenture and none of those firms.
+- **Sub awards show up late, or not at all, in prime data.** A new
+  subcontract or task under this prime never appears as a prime award. It
+  only appears in subaward reports, which primes file themselves, often
+  months later.
 
-**Expected tool behavior (draft):**
-- `search_awards(keyword: "VA.gov", agency: "VA")` returns the product-team
-  orders above (where they fall inside the sync window).
-- `expiring_contracts(agency: "VA")` surfaces the product-team orders ending
-  soon, such as `36C10B25N00070011` ending 2027-08-28 once it falls inside the window.
-- `company_profile(name: "Oddball")` shows a VA-heavy portfolio.
+**Expected tool behavior (v1):**
+- `search_awards(keyword: "GI Bill", agency: "VA", days: 3650)` finds it
+  (once the backfill covers its last action).
+- `company_profile(name: "Accenture Federal")` includes it as a top VA award.
+- `expiring_contracts(agency: "VA")` does **not** list it (current end is in
+  the past). That's the limitation above.
+- Nothing in v1 surfaces the subcontractors. See "Subawards" in `status.md`
+  for the v2 case.
 
 ---
 
@@ -83,8 +104,8 @@ Hoc-style shops), which suits job seekers who want small-company agile teams.
 
 - **Sync window.** We store contracts with any action in the last 365 days.
   DID(IT) was last modified 2026-04-27, so it's in a full backfill but not in
-  the 30-day local dataset. Several VA candidates ended earlier and won't be in
-  v1 data at all.
+  the 30-day local dataset. DGIB was last modified 2026-02-24, so it's in a full
+  backfill too.
 - **No job postings.** This server has award data only. "Related jobs" means
   hiring signals (who holds the work, when it ends, who may win it), not job
   listings. Pairing it with a job-search tool is the client's job.
