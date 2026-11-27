@@ -4,7 +4,7 @@ _Last updated: 2026-11-27_
 
 ## Current milestone
 
-**Milestone 4** — done. Next: Milestone 5.
+**Milestone 5** — done. Next: Milestone 6.
 
 ## Milestones
 
@@ -15,7 +15,7 @@ _Last updated: 2026-11-27_
 | 2 | Migrations + models | done |
 | 3 | `Usaspending::Client`, cassette, `AwardMapper` | done |
 | 4 | `AwardSync` + rake tasks, 30-day local backfill | done |
-| 5 | Query objects + specs | not started |
+| 5 | Query objects + specs | done |
 | 6 | MCP endpoint + `search_awards`, verified in Inspector + Claude | not started |
 | 7 | Remaining three tools | not started |
 | 8 | rack-attack, input clamping, error handling | not started |
@@ -26,7 +26,7 @@ _Last updated: 2026-11-27_
 
 ## Next step
 
-Milestone 5: query objects in `app/queries/` with specs, one per tool (search, recent, expiring, company profile). Add trigram indexes on `recipients.name` and `agencies.name` for fuzzy matching. Agency matching should accept the abbreviation (`DHS`) or a name fragment.
+Milestone 6: `/mcp` endpoint + `search_awards` tool over `AwardSearch`. First verify against the `mcp` gem (1.11) README: stateless Streamable HTTP transport vs. a controller calling `handle_json`, structured vs. text content, and tool-error shape. Then check end to end in MCP Inspector and Claude, using the `examples.md` prompts.
 
 ## Blockers
 
@@ -43,6 +43,8 @@ None.
 7. **Paging cap — handled at M4.** Page-based paging fails with 422 past 50,000 results. The sync uses 30-day windows with `date_type: "action_date"`, which partition exactly (12 monthly counts summed to the 365-day total of 53,914; largest window ~7.7k).
 8. **DoD has no recent data.** The 30-day local backfill had 0 DoD awards (90-day publication delay). Demo prompts should use civilian agencies (DHS, HHS, VA, Treasury), and tool descriptions must state the DoD delay.
 9. **"Recent" vs. stored.** Of 3,297 awards with activity in the last 30 days, only 570 were signed in that window; the rest are older contracts with recent modifications (signed as far back as 2001). `recent_awards` must filter on `action_date` (signed), not just "is in the DB".
+10. **Company acronyms aren't matched.** `company_profile(name: "GDIT")` finds nothing; the recipient is "GENERAL DYNAMICS INFORMATION TECHNOLOGY". Fine for v1; tool description should ask for the company's legal name.
+11. **GIBCT contract not identified** (`examples.md` §2). Need Adam to confirm which VA contract or vendor covers it.
 
 ## Decisions log
 
@@ -62,3 +64,7 @@ None.
 - 2026-11-27: M4 sync uses `date_type: "action_date"` (not the API default). Same set of contracts over the full range, but adjacent windows don't overlap: the default would fetch ~240k records to get 54k.
 - 2026-11-27: M4 agency abbreviations come from `/api/v2/references/toptier_agencies/`, fetched once per run. National Gallery of Art and Smithsonian have none upstream.
 - 2026-11-27: M4 30-day local backfill: 3,297 awards (matches the API count exactly), 1,066 recipients, 54 agencies, 0 skipped, ~29s. Re-running is idempotent.
+- 2026-11-27: M5 agency matching: toptier abbreviation, or sub-agency acronym derived from its name (USCIS, FEMA, CBP; aliases for CMS and CDC); only if no acronym matches, a 4+ character name fragment. Prevents "ICE" matching "Justice".
+- 2026-11-27: M5 company matching groups recipient rows by normalized name (Leidos has 5 UEIs under one name). Exact UEI > exact name > substring > trigram. Trigram-only matches are always returned as candidates, never as a profile ("Excella" must not silently become "Excelous").
+- 2026-11-27: M5 `recent_awards` and `search_awards` window on `action_date` (signed). `expiring_contracts` on `end_date`. Company trend = last 8 calendar quarters by signed date, zero-filled.
+- 2026-11-27: Added `examples.md`: DID(IT) II (Excella/USCIS, ended 2026-10-15) and GIBCT (contract TBD) as reference cases for specs and demos.

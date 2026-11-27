@@ -2,6 +2,7 @@
 
 How to pick up this project cold, whether you're a person or an agent.
 Read in this order: `CLAUDE.md` (the spec), `status.md` (where things stand), then this file.
+`examples.md` has the real contracts used to sanity-check tool output.
 
 ## What this is
 
@@ -63,7 +64,8 @@ _Filled in as of Milestone 6._ MCP Inspector: `npx @modelcontextprotocol/inspect
 - `app/models/`: `Agency`, `Recipient`, `Award`, `SyncRun` (`SyncRun.data_freshness` feeds tool responses)
 - `spec/factories/`: FactoryBot factories for all four models
 - `app/mcp/tools/`: MCP tool classes (thin)
-- `app/queries/`: query objects (business logic)
+- `app/queries/`: query objects, one per tool: `AwardSearch`, `RecentAwards`, `ExpiringContracts`, `CompanyProfile`; shared `AgencyFilter` (abbreviation/acronym/name matching) and `QueryLimits` (clamps)
+- `spec/support/query_fixtures.rb`: fixed-date dataset modeled on `examples.md` for query specs
 - `app/services/usaspending/client.rb`: Faraday client for `spending_by_award` (retries, 25s timeout, page-based; max 50k results per window)
 - `app/services/usaspending/award_mapper.rb`: raw result -> Agency/Recipient/Award attributes keyed by natural keys
 - `app/services/award_sync.rb`: fetches 30-day windows, upserts agencies -> recipients -> awards per page, records `sync_runs`

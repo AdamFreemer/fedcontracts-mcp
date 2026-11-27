@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_27_220400) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_28_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -64,6 +64,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_27_220400) do
     t.string "country"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_recipients_on_name_trgm", opclass: :gin_trgm_ops, using: :gin
     t.index ["recipient_key"], name: "index_recipients_on_recipient_key", unique: true
     t.index ["uei"], name: "index_recipients_on_uei"
     t.index ["usaspending_recipient_id"], name: "index_recipients_on_usaspending_recipient_id"
