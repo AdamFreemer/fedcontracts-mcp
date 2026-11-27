@@ -2,9 +2,9 @@ require "rails_helper"
 
 RSpec.describe QueryLimits do
   describe ".limit" do
-    it "defaults to 25 and clamps to 1..100" do
+    it "defaults to 25 and clamps to 1..50" do
       expect(described_class.limit(nil)).to eq(25)
-      expect(described_class.limit(500)).to eq(100)
+      expect(described_class.limit(500)).to eq(50)
       expect(described_class.limit(0)).to eq(1)
       expect(described_class.limit("10")).to eq(10)
     end

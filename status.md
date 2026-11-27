@@ -26,7 +26,7 @@ _Last updated: 2026-11-27_
 
 ## Next step
 
-Milestone 8: rack-attack throttle on `/mcp` (60/min/IP), optional `MCP_BEARER_TOKEN`, review input clamping and error handling end to end. Most clamping and error shaping already landed in M5–M7; M8 is mainly the throttle, the token, and a pass for gaps.
+Milestone 8: rack-attack throttle on `/mcp` (60/min/IP), optional `MCP_BEARER_TOKEN`, review input clamping and error handling end to end. Most clamping and error shaping already landed in M5–M7; M8 is mainly the throttle, the token, and a pass for gaps. The local end-date enrichment is still filling (5,000 per run); re-check `recompete_only` once it has.
 
 ## Blockers
 
@@ -81,3 +81,6 @@ None.
 - 2026-11-27: 365-day backfill: 53,897 awards + 17 skipped (Treasury bureau orders with no agency code upstream) = API count 53,914. ~8 min.
 - 2026-11-27: M7 EndDateEnricher first used 4 threads; that produced SSL EOF errors and then an IP block from USAspending. Rewritten as sequential, rate-limited (0.4s between requests), prioritized (soonest end first), capped (5,000/run), with a circuit breaker (10 consecutive failures). Simpler code too: no threads, no interlock workaround.
 - 2026-11-27: 730-day backfill: 102,020 awards + 17 skipped (Treasury bureau orders without an agency code). ~16 min.
+- 2026-11-27: M7 result limit max lowered 100 -> 50 (spec said 100). A 100-contract `expiring_contracts` response was 76k chars, over Claude Code's tool-output limit; 50 is ~38k. Dropped `naics_description` from award lists.
+- 2026-11-27: M7 `expiring_contracts` reports `unchecked_count` and says so in the summary, so an empty `recompete_only` result isn't mistaken for "no recompetes" while enrichment is incomplete.
+- 2026-11-27: M7 headless Claude checks with `examples.md` prompts (DID(IT), DGIB, VA recent + expiring) used all four tools sensibly. Found an unconfirmed DID(IT) -> ODOS 3.1 link and a DGIB follow-on order ending 2026-12-29. Exposed the payload-size bug and the signing-date window trap in `search_awards` (description now says to widen `days`).

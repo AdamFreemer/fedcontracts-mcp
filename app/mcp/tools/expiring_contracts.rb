@@ -27,7 +27,7 @@ module Tools
         within_days: { type: "integer", minimum: 1, maximum: 730, description: "Window ahead from today in days (default 180)" },
         min_amount: { type: "number", minimum: 0, description: "Minimum award amount in USD" },
         recompete_only: { type: "boolean", description: "Only contracts in their final period (default false)" },
-        limit: { type: "integer", minimum: 1, maximum: 100, description: "Max contracts to return (default 25)" }
+        limit: { type: "integer", minimum: 1, maximum: 50, description: "Max contracts to return (default 25)" }
       },
       additionalProperties: false
     )
@@ -43,8 +43,12 @@ module Tools
       counts = contracts.group_by { |c| c[:option_status] }.transform_values(&:size)
       summary = "#{result.total_count} contracts ending in the window#{agency_note(result)}; showing #{contracts.size} " \
                 "(#{::ExpiringContracts::STATUSES.map { |s| "#{counts.fetch(s, 0)} #{s}" }.join(', ')})."
-      respond(summary, { total_count: result.total_count, returned: contracts.size, matched_agencies: result.matched_agencies,
-                         contracts: })
+      if result.unchecked_count.positive?
+        summary += " #{result.unchecked_count} contracts in the window have unknown option status (not yet checked or under $100k)" \
+                   "#{', so recompete_only may be incomplete' if recompete_only}."
+      end
+      respond(summary, { total_count: result.total_count, returned: contracts.size, unchecked_count: result.unchecked_count,
+                         matched_agencies: result.matched_agencies, contracts: })
     end
   end
 end

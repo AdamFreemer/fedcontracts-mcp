@@ -36,6 +36,11 @@ RSpec.describe ExpiringContracts do
     expect(expiring(recompete_only: true).awards).to eq([ data[:didit], data[:dgib] ])
   end
 
+  it "counts unchecked contracts in the window, even with recompete_only" do
+    expect(expiring.unchecked_count).to eq(2)
+    expect(expiring(recompete_only: true).unchecked_count).to eq(2)
+  end
+
   it "excludes contracts that already ended or end after the window" do
     awards = expiring(within_days: 730).awards
     expect(awards).not_to include(data[:va_old])

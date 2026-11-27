@@ -33,8 +33,15 @@ no USCIS award mentions "Digital Innovation and Development" other than this one
 (Excella) either keeps the team on a follow-on or releases people, and the
 follow-on winner needs to staff up fast, often by hiring the incumbent's people.
 
+**What Claude found (headless check, 2026-11-27):** no DID(IT) follow-on by
+name. Three USCIS **ODOS 3.1** task orders were awarded 2026-09-14 (BridgePhase
+$25.5M, Emerge Tek $18.4M, Softrams $7.7M; all start 2026-09-25 and end
+2027-05-24). They began three weeks before DID(IT) II ended and total about
+$51.5M, so the development work may have moved there. That's an unconfirmed
+hypothesis: the descriptions don't mention DID(IT).
+
 **Expected tool behavior:**
-- `search_awards(keyword: "DID(IT)", agency: "USCIS")` finds it. The keyword
+- `search_awards(keyword: "DID(IT)", agency: "USCIS", days: 3650)` finds it. The keyword
   contains parentheses: USAspending's own keyword search returns **0** for
   `DID(IT)`, but our substring/trigram search should match.
 - `search_awards(keyword: "digital innovation", agency: "DHS")` finds it.
@@ -68,6 +75,7 @@ teams sit inside large program contracts.
 | Last modified | 2026-02-24 (still active) |
 | NAICS | 541512 |
 | Subawards | **493 reports, $233.1M**, about 47% of obligations |
+| Follow-on order | `36C10D24F0021` "VBA DGIB Support Services", Accenture, $383.7M, GSA vehicle `47QTCK18D0036`, **2023-12-30 to 2026-12-29** |
 
 Largest reported subcontractors (first page of subaward reports, by amount):
 Lefant ($80.3M), Four Points Technology ($22.3M), SteerBridge Strategies
@@ -76,6 +84,10 @@ Engineering Solutions ($14.1M), Knowledge Vortex ($11.4M), Morgan 6 ($8.1M),
 DynaVet Solutions ($6.0M), Gray Digital ($3.4M). Latest report: 2025-06.
 
 **What it shows:**
+- **The program moved vehicles.** A second Accenture order on a GSA vehicle
+  started before the first one lapsed and ends **2026-12-29**, so a
+  follow-on, bridge, or recompete decision on DGIB is imminent. Claude found
+  this order in the headless check; it wasn't in the original research.
 - **The current end date misleads.** The award "ended" in 2025 by `end_date`
   but runs to 2030 through option years. `expiring_contracts` keys on the
   current end, so it can flag option renewals as if they were recompetes, and
@@ -90,11 +102,13 @@ DynaVet Solutions ($6.0M), Gray Digital ($3.4M). Latest report: 2025-06.
   months later.
 
 **Expected tool behavior (v1):**
-- `search_awards(keyword: "GI Bill", agency: "VA", days: 3650)` finds it
-  (once the backfill covers its last action).
+- `search_awards(keyword: "Digital GI", days: 3650)` finds the original order;
+  `keyword: "DGIB"` finds the follow-on. A 730-day window misses both because
+  search filters on signing date (the tool description now says to widen days).
+- `expiring_contracts(agency: "VA")` lists `36C10D24F0021` (ends 2026-12-29).
 - `company_profile(name: "Accenture Federal")` includes it as a top VA award.
-- `expiring_contracts(agency: "VA")` does **not** list it (current end is in
-  the past). That's the limitation above.
+- `expiring_contracts(agency: "VA")` lists the original `36C10D21N0007` only
+  once its potential end (2030-09-29) falls inside the window.
 - Nothing in v1 surfaces the subcontractors. See "Subawards" in `status.md`
   for the v2 case.
 

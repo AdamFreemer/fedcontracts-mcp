@@ -130,6 +130,8 @@ RSpec.describe "MCP endpoint", type: :request do
 
         expect(result.dig("structuredContent", "contracts").map { |c| c["piid"] }).to eq(%w[70SBUR22F00000004 36C10D21N0007])
         expect(result.dig("content", 0, "text")).to include("2 final_period, 0 options_remaining, 0 unknown")
+        expect(result.dig("content", 0, "text")).to include("2 contracts in the window have unknown option status")
+        expect(result.dig("structuredContent", "unchecked_count")).to eq(2)
       end
 
       it "rejects bad input" do

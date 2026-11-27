@@ -11,7 +11,8 @@ class ExpiringContracts
   STATUSES = %w[final_period options_remaining unknown].freeze
 
   Item = Data.define(:award, :status, :final_end_date)
-  Result = Data.define(:items, :total_count, :matched_agencies) do
+  # unchecked_count: contracts in the window (before recompete_only) whose option status is unknown.
+  Result = Data.define(:items, :total_count, :unchecked_count, :matched_agencies) do
     def awards = items.map(&:award)
   end
 
@@ -30,11 +31,13 @@ class ExpiringContracts
   end
 
   def call
-    scope = filtered_scope
+    base = base_scope
+    scope = @recompete_only ? recompete_filter(base) : base
     awards = scope.includes(:recipient, :awarding_agency)
                   .order(Arel.sql(Award.sanitize_sql_array([ "#{EVENT_DATE_SQL} ASC", { today: @today } ])), amount: :desc, id: :asc)
                   .limit(@limit).to_a
-    Result.new(items: awards.map { |a| item(a) }, total_count: scope.count, matched_agencies: @agency.matched_names)
+    Result.new(items: awards.map { |a| item(a) }, total_count: scope.count,
+               unchecked_count: base.where(details_checked_at: nil).count, matched_agencies: @agency.matched_names)
   end
 
   private
@@ -43,15 +46,15 @@ class ExpiringContracts
     @today..(@today + @within_days)
   end
 
-  def filtered_scope
+  def base_scope
     scope = Award.where(end_date: window)
                  .or(Award.where(potential_end_date: window).where("awards.potential_end_date >= awards.end_date"))
     scope = scope.where(amount: BigDecimal(@min_amount.to_s)..) if @min_amount.present?
-    if @recompete_only
-      scope = scope.where.not(details_checked_at: nil)
-                   .where("#{FINAL_END_SQL} BETWEEN ? AND ?", window.begin, window.end)
-    end
     @agency.apply(scope)
+  end
+
+  def recompete_filter(scope)
+    scope.where.not(details_checked_at: nil).where("#{FINAL_END_SQL} BETWEEN ? AND ?", window.begin, window.end)
   end
 
   def item(award)

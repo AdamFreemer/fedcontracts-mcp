@@ -48,7 +48,6 @@ module Tools
           end_date: award.end_date&.iso8601,
           potential_end_date: award.potential_end_date&.iso8601,
           naics_code: award.naics_code,
-          naics_description: award.naics_description,
           psc_code: award.psc_code,
           place_of_performance_state: award.place_of_performance_state,
           url: award.usaspending_url

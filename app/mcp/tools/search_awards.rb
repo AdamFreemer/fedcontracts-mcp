@@ -4,7 +4,8 @@ module Tools
     title "Search contract awards"
     description <<~TEXT
       Search federal IT/software contract awards signed in the last N days (default 90),
-      newest first. Use it to answer "who won what" questions, e.g. "Which companies won DHS
+      newest first. The window filters on signing date, so to find a long-running contract
+      by name (signed years ago, still active) set days up to 3650. Use it to answer "who won what" questions, e.g. "Which companies won DHS
       cloud contracts this quarter?" or "Find awards mentioning DID(IT) at USCIS".
 
       Filters (all optional, combined with AND):
@@ -19,7 +20,7 @@ module Tools
       performance end; potential_end_date is the end if all options are exercised (known for
       awards >= $100k). Only prime contracts with activity in about the last 2 years are stored.
       Department of Defense data lags ~90 days. Returns at most `limit` awards (default 25,
-      max 100) plus total_count, each with a usaspending.gov URL. For "who won lately at an
+      max 50, to keep responses within client size limits) plus total_count, each with a usaspending.gov URL. For "who won lately at an
       agency" prefer recent_awards; for contracts ending soon use expiring_contracts.
     TEXT
     input_schema(
@@ -31,7 +32,7 @@ module Tools
         state: { type: "string", description: "2-letter place-of-performance state code, e.g. VA", pattern: "^[A-Za-z]{2}$" },
         min_amount: { type: "number", minimum: 0, description: "Minimum award amount in USD" },
         days: { type: "integer", minimum: 1, maximum: 3650, description: "Look back this many days by signed date (default 90)" },
-        limit: { type: "integer", minimum: 1, maximum: 100, description: "Max awards to return (default 25)" }
+        limit: { type: "integer", minimum: 1, maximum: 50, description: "Max awards to return (default 25)" }
       },
       additionalProperties: false
     )

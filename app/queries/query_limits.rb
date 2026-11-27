@@ -2,7 +2,7 @@
 # keep queries safe on their own.
 module QueryLimits
   DEFAULT_LIMIT = 25
-  MAX_LIMIT = 100
+  MAX_LIMIT = 50
   MAX_DAYS = 3650
 
   module_function
