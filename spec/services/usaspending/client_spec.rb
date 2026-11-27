@@ -35,6 +35,12 @@ RSpec.describe Usaspending::Client do
       expect(client.award(gid).dig("period_of_performance", "potential_end_date")).to eq("2030-09-29 00:00:00")
     end
 
+    it "retries dropped TLS connections" do
+      stub_request(:get, %r{/api/v2/awards/Y/}).to_raise(Faraday::SSLError.new("SSL_read: unexpected eof")).then
+                                               .to_return(json_response_body({ "ok" => true }))
+      expect(client.award("Y")).to eq("ok" => true)
+    end
+
     it "retries GETs on 5xx" do
       stub_request(:get, %r{/api/v2/awards/X/}).to_return({ status: 502 }).then.to_return(json_response_body({ "ok" => true }))
       expect(client.award("X")).to eq("ok" => true)

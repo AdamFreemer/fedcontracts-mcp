@@ -1,22 +1,19 @@
 # Fills awards.potential_end_date (the end date if every option is exercised) from
 # USAspending's award detail endpoint, which the bulk search doesn't expose.
-# Only awards that matter for expiring_contracts are checked, and each is
-# re-checked only when USAspending reports a newer modification.
+#
+# USAspending is a free public API that blocks clients sending bursts of requests,
+# so this runs one request at a time with a pause between them, checks the
+# soonest-ending contracts first, caps each run, and stops early when requests
+# keep failing. Whatever isn't checked waits for the next run.
 class EndDateEnricher
   MIN_AMOUNT = 100_000
   LOOKBACK_DAYS = 730 # ended up to 2 years ago: may still run on unexercised options
   LOOKAHEAD_DAYS = 365
-  THREADS = 4
-  MAX_FAILURE_RATE = 0.05
+  MAX_PER_RUN = 5_000
+  REQUEST_INTERVAL = 0.4 # seconds between requests (~1-2 requests/s with latency)
+  MAX_CONSECUTIVE_FAILURES = 10
 
-  Result = Data.define(:checked, :failed)
-
-  def initialize(client: Usaspending::Client.new, today: Date.current, logger: Rails.logger, threads: THREADS)
-    @client = client
-    @today = today
-    @logger = logger
-    @threads = threads
-  end
+  Result = Data.define(:checked, :failed, :remaining, :stopped_early)
 
   def self.candidates(today: Date.current)
     Award.where(end_date: (today - LOOKBACK_DAYS)..(today + LOOKAHEAD_DAYS))
@@ -24,43 +21,51 @@ class EndDateEnricher
          .where("awards.details_checked_at IS NULL OR awards.details_checked_at < (awards.raw->>'Last Modified Date')::timestamp")
   end
 
+  def initialize(client: Usaspending::Client.new, today: Date.current, logger: Rails.logger,
+                 max_per_run: MAX_PER_RUN, request_interval: REQUEST_INTERVAL)
+    @client = client
+    @today = today
+    @logger = logger
+    @max_per_run = max_per_run
+    @request_interval = request_interval
+  end
+
   def call
-    ids = self.class.candidates(today: @today).pluck(:id, :generated_internal_id)
-    @logger.info("[EndDateEnricher] #{ids.size} awards to check")
-    checked = Concurrent::AtomicFixnum.new
-    failed = Concurrent::AtomicFixnum.new
+    batch = prioritized_candidates.limit(@max_per_run).pluck(:id, :generated_internal_id)
+    @logger.info("[EndDateEnricher] checking #{batch.size} awards (soonest-ending first)")
+    checked = failed = consecutive_failures = 0
+    stopped_early = false
 
-    queue = Queue.new
-    ids.each { |pair| queue << pair }
-    @threads.times { queue << nil }
+    batch.each_with_index do |(id, gid), index|
+      sleep(@request_interval) if index.positive? && @request_interval.positive?
 
-    workers = Array.new(@threads) do
-      Thread.new do
-        Rails.application.executor.wrap do
-          while (pair = queue.pop)
-            id, gid = pair
-            if enrich(id, gid)
-              n = checked.increment
-              @logger.info("[EndDateEnricher] #{n}/#{ids.size}") if (n % 500).zero?
-            else
-              failed.increment
-            end
-          end
+      if enrich(id, gid)
+        checked += 1
+        consecutive_failures = 0
+        @logger.info("[EndDateEnricher] #{checked}/#{batch.size}") if (checked % 250).zero?
+      else
+        failed += 1
+        consecutive_failures += 1
+        if consecutive_failures >= MAX_CONSECUTIVE_FAILURES
+          @logger.warn("[EndDateEnricher] #{consecutive_failures} failures in a row; stopping until the next run")
+          stopped_early = true
+          break
         end
       end
     end
-    workers.each(&:join)
 
-    result = Result.new(checked: checked.value, failed: failed.value)
-    @logger.info("[EndDateEnricher] done: #{result.checked} checked, #{result.failed} failed")
-    if ids.any? && result.failed > ids.size * MAX_FAILURE_RATE
-      raise "EndDateEnricher: #{result.failed}/#{ids.size} lookups failed"
-    end
-
+    result = Result.new(checked:, failed:, remaining: self.class.candidates(today: @today).count, stopped_early:)
+    @logger.info("[EndDateEnricher] done: #{result.checked} checked, #{result.failed} failed, #{result.remaining} remaining")
     result
   end
 
   private
+
+  # Contracts whose current end is soonest (and still ahead) first, then lapsed ones.
+  def prioritized_candidates
+    self.class.candidates(today: @today)
+        .order(Arel.sql(Award.sanitize_sql_array([ "awards.end_date < ?, awards.end_date ASC, awards.id ASC", @today ])))
+  end
 
   def enrich(id, gid)
     detail = @client.award(gid)

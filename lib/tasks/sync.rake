@@ -1,6 +1,11 @@
 namespace :sync do
+  def stdout_logger
+    $stdout.sync = true # show progress immediately when output is redirected (Heroku logs, files)
+    ActiveSupport::Logger.new($stdout)
+  end
+
   def run_award_sync(days)
-    logger = ActiveSupport::Logger.new($stdout)
+    logger = stdout_logger
     result = AwardSync.new(days:, logger:).call
     puts "Sync ##{result.sync_run.id} succeeded: #{result.upserted} awards upserted, #{result.skipped} skipped " \
          "(#{days} days, NAICS #{AwardSync.naics_codes.join(',')})"
@@ -9,7 +14,8 @@ namespace :sync do
 
   def run_end_date_enrichment(logger)
     result = EndDateEnricher.new(logger:).call
-    puts "End dates: #{result.checked} checked, #{result.failed} failed"
+    puts "End dates: #{result.checked} checked, #{result.failed} failed, #{result.remaining} remaining" \
+         "#{' (stopped early after repeated failures)' if result.stopped_early}"
   end
 
   desc "Backfill contract awards (default 730 days; override with DAYS=30), then fetch potential end dates"
@@ -24,6 +30,6 @@ namespace :sync do
 
   desc "Fetch potential end dates for awards that need them (normally run by the sync tasks)"
   task end_dates: :environment do
-    run_end_date_enrichment(ActiveSupport::Logger.new($stdout))
+    run_end_date_enrichment(stdout_logger)
   end
 end

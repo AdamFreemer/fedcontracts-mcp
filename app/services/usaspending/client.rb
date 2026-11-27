@@ -99,7 +99,7 @@ module Usaspending
           retry_statuses: [ 429, 500, 502, 503, 504 ],
           # raise_error turns 429/5xx into these before retry sees the status, so list them too.
           exceptions: Faraday::Retry::Middleware::DEFAULT_EXCEPTIONS +
-            [ Faraday::ConnectionFailed, Faraday::TooManyRequestsError, Faraday::ServerError ]
+            [ Faraday::ConnectionFailed, Faraday::SSLError, Faraday::TooManyRequestsError, Faraday::ServerError ]
         f.response :raise_error
         f.response :json
         f.options.timeout = @timeout
