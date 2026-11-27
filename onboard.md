@@ -27,10 +27,8 @@ bin/rails db:prepare
 ## Running
 
 ```sh
-bin/rails server        # http://localhost:3000/up returns 200
+bin/rails server        # http://localhost:3000/up returns 200; MCP at http://localhost:3000/mcp
 ```
-
-The MCP endpoint lands at Milestone 6.
 
 ## Tests
 
@@ -57,13 +55,32 @@ DoD data lags ~90 days, so recent windows have little or no DoD.
 
 ## Connecting an MCP client
 
-_Filled in as of Milestone 6._ MCP Inspector: `npx @modelcontextprotocol/inspector`.
+`/mcp` speaks JSON-RPC 2.0 over HTTP POST (MCP Streamable HTTP, stateless, JSON responses). Three methods matter: `initialize`, `tools/list`, `tools/call`.
+
+```sh
+# Raw
+curl -s localhost:3000/mcp -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"search_awards","arguments":{"agency":"USCIS","days":365}}}'
+
+# MCP Inspector: web UI (pick "Streamable HTTP", URL http://localhost:3000/mcp)
+npx @modelcontextprotocol/inspector
+# ...or CLI
+npx @modelcontextprotocol/inspector --cli http://localhost:3000/mcp --transport http --method tools/list
+
+# Claude Code (can reach localhost)
+claude mcp add --transport http fedcontracts http://localhost:3000/mcp
+```
+
+Claude.ai and Claude Desktop custom connectors connect from Anthropic's servers, so they need the deployed URL (M10).
+Deployed hostnames must be listed in `MCP_ALLOWED_HOSTS` or the transport returns 403 (DNS-rebinding protection).
 
 ## Repo map
 
 - `app/models/`: `Agency`, `Recipient`, `Award`, `SyncRun` (`SyncRun.data_freshness` feeds tool responses)
 - `spec/factories/`: FactoryBot factories for all four models
-- `app/mcp/tools/`: MCP tool classes (thin)
+- `app/mcp/mcp_endpoint.rb`: Rack app mounted at `/mcp`; builds the server (name, instructions, tools) and stateless transport
+- `app/mcp/tools/`: MCP tool classes (thin). `Tools::Base` has the response helpers (`respond`, `error`, `award_json`, `data_freshness`)
+- `spec/requests/mcp_spec.rb`: protocol-level specs (handshake, list, call, errors, host check)
 - `app/queries/`: query objects, one per tool: `AwardSearch`, `RecentAwards`, `ExpiringContracts`, `CompanyProfile`; shared `AgencyFilter` (abbreviation/acronym/name matching) and `QueryLimits` (clamps)
 - `spec/support/query_fixtures.rb`: fixed-date dataset modeled on `examples.md` for query specs
 - `app/services/usaspending/client.rb`: Faraday client for `spending_by_award` (retries, 25s timeout, page-based; max 50k results per window)

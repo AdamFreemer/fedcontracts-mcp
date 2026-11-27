@@ -4,7 +4,7 @@ _Last updated: 2026-11-27_
 
 ## Current milestone
 
-**Milestone 5** — done. Next: Milestone 6.
+**Milestone 6** — done. Next: Milestone 7.
 
 ## Milestones
 
@@ -16,7 +16,7 @@ _Last updated: 2026-11-27_
 | 3 | `Usaspending::Client`, cassette, `AwardMapper` | done |
 | 4 | `AwardSync` + rake tasks, 30-day local backfill | done |
 | 5 | Query objects + specs | done |
-| 6 | MCP endpoint + `search_awards`, verified in Inspector + Claude | not started |
+| 6 | MCP endpoint + `search_awards`, verified in Inspector + Claude | done |
 | 7 | Remaining three tools | not started |
 | 8 | rack-attack, input clamping, error handling | not started |
 | 9 | Landing page | not started |
@@ -26,7 +26,7 @@ _Last updated: 2026-11-27_
 
 ## Next step
 
-Milestone 6: `/mcp` endpoint + `search_awards` tool over `AwardSearch`. First verify against the `mcp` gem (1.11) README: stateless Streamable HTTP transport vs. a controller calling `handle_json`, structured vs. text content, and tool-error shape. Then check end to end in MCP Inspector and Claude, using the `examples.md` prompts.
+Milestone 7: `recent_awards`, `expiring_contracts`, `company_profile` tools over the M5 queries, each with request specs (happy path + bad input), then re-run the headless Claude check with `examples.md` prompts. Decide risk 1 and 11 (expiring coverage, current vs. potential end date) with Adam first: options in plain terms.
 
 ## Blockers
 
@@ -37,7 +37,7 @@ None.
 1. **`expiring_contracts` coverage gap — confirmed at M3.** The award search can't filter on period-of-performance end (`date_type` is only `action_date`, `date_signed`, `last_modified_date`, `new_awards_only`). Contracts ending soon with no action in the sync window are missing. Decide at M7: a caveat in the tool description (cheapest), or a longer backfill window.
 2. **Recipient upsert key can be null.** Resolved in schema: non-null unique `recipient_key` (USAspending ID, else normalized name). The mapper (M3) owns the normalization.
 3. **Agency key — resolved at M3.** `Awarding Agency Code` is the toptier code (e.g. `070` = DHS). The API does not return abbreviations, so "DHS"-style matching needs `/api/v2/references/toptier_agencies/` in the sync (M4).
-4. **`mcp` gem version / API.** Pinned `~> 1.11` (1.11.0 current). Confirm the transport and error shape at M6.
+4. **`mcp` gem — resolved at M6.** 1.11's `StreamableHTTPTransport` supports `stateless: true` + `enable_json_response: true`; mounted directly as a Rack app. Argument validation against the input schema is built in (tool-level `isError`); unexpected exceptions become a generic JSON-RPC error with no message (CWE-209), reported via `exception_reporter`.
 5. **Heroku Ruby version.** No `ruby` directive in the Gemfile, so `Gemfile.lock` has no `RUBY VERSION`. Confirm at M10 that the Heroku buildpack picks up 3.3.14 (add `ruby file: ".ruby-version"` if not).
 6. **Descriptions are truncated to 250 chars** by the search API. Keyword search only sees that prefix. Acceptable for v1; mention it in the `search_awards` description.
 7. **Paging cap — handled at M4.** Page-based paging fails with 422 past 50,000 results. The sync uses 30-day windows with `date_type: "action_date"`, which partition exactly (12 monthly counts summed to the 365-day total of 53,914; largest window ~7.7k).
@@ -70,3 +70,7 @@ None.
 - 2026-11-27: M5 `recent_awards` and `search_awards` window on `action_date` (signed). `expiring_contracts` on `end_date`. Company trend = last 8 calendar quarters by signed date, zero-filled.
 - 2026-11-27: Added `examples.md`: DID(IT) II (Excella/USCIS, ended 2026-10-15) and GIBCT (contract TBD) as reference cases for specs and demos.
 - 2026-11-27: GIBCT confirmed as part of Accenture Federal's DGIB contract `36C10D21N0007` (VA/VBA). `examples.md` §2 updated with subaward data. Exposed risks 11 (current vs. potential end date) and 12 (subawards).
+- 2026-11-27: M6 `/mcp` = official transport mounted in routes, stateless JSON, `serve_subscriptions_listen: false`. Fresh server + transport per request (cheap; reload-safe). Host-header protection on: loopback by default, deployed hosts via `MCP_ALLOWED_HOSTS` (must be set on Heroku at M10).
+- 2026-11-27: M6 tool responses: `structuredContent` plus two text blocks (one-line summary, same JSON). The gem doesn't text-serialize Hash structured content, and some clients only read text. Every payload has `data_freshness`. Awards expose `signed_date` (= `action_date`) to avoid the ambiguous name.
+- 2026-11-27: M6 input schemas are closed (`additionalProperties: false`) with explicit bounds, so bad input is a readable tool error. Unmatched agency is a tool error with guidance; no matches is an empty success.
+- 2026-11-27: M6 verified with curl, MCP Inspector CLI, and a headless Claude Code session (`claude -p --mcp-config`): asked about DHS software/cloud awards without naming the tool, Claude called `search_awards(agency: DHS, days: 30, limit: 100)` and separated license resales from staffing signals.

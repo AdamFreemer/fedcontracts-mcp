@@ -41,5 +41,6 @@ end
 
 RSpec.configure do |config|
   config.include QueryFixtures, type: :query
+  config.include QueryFixtures, type: :request
   config.define_derived_metadata(file_path: %r{/spec/queries/}) { |meta| meta[:type] = :query }
 end
