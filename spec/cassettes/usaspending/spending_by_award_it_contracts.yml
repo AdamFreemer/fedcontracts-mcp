@@ -1,0 +1,192 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: https://api.usaspending.gov/api/v2/search/spending_by_award/
+    body:
+      encoding: UTF-8
+      string: '{"filters":{"award_type_codes":["A","B","C","D"],"time_period":[{"start_date":"2026-11-13","end_date":"2026-11-27"}],"naics_codes":["541511","541512","541513","541519","518210"]},"fields":["Award
+        ID","generated_internal_id","Recipient Name","recipient_id","Recipient UEI","Recipient
+        Location","Awarding Agency","Awarding Agency Code","Awarding Sub Agency","Description","Award
+        Amount","Start Date","End Date","Base Obligation Date","Last Modified Date","NAICS","PSC","Place
+        of Performance State Code","Contract Award Type"],"sort":"Base Obligation
+        Date","order":"desc","limit":10,"page":1}'
+    headers:
+      User-Agent:
+      - Faraday v2.15.1
+      Content-Type:
+      - application/json
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Date:
+      - Fri, 27 Nov 2026 21:43:11 GMT
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '14576'
+      Connection:
+      - keep-alive
+      Vary:
+      - Accept, Cookie, origin
+      Allow:
+      - POST, OPTIONS
+      Cache-Trace:
+      - hit-cache
+      Key:
+      - b5857cfff6d3a28249c3dbafc88ab378
+      X-Frame-Options:
+      - DENY
+      X-Content-Type-Options:
+      - nosniff
+      Referrer-Policy:
+      - same-origin
+      Cross-Origin-Opener-Policy:
+      - same-origin
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubDomains
+    body:
+      encoding: UTF-8
+      string: '{"spending_level":"awards","limit":10,"results":[{"internal_id":367378819,"Award
+        ID":"95332A27F00004","generated_internal_id":"CONT_AWD_95332A27F00004_9577_NNG15SD76B_8000","Recipient
+        Name":"ENTERPRISE TECHNOLOGY SOLUTIONS, INC.","recipient_id":"b3bf0045-a393-0c84-7e1c-41efc4b25c9e-C","Recipient
+        UEI":"FBRMCGPMN963","Recipient Location":{"location_country_code":"USA","country_name":"UNITED
+        STATES","state_code":"MD","state_name":"Maryland","city_name":"COLLEGE PARK","county_code":"033","county_name":"PRINCE
+        GEORGE''S","address_line1":"9658 BALTIMORE AVE STE 300","address_line2":null,"address_line3":null,"congressional_code":"04","zip4":"1346","zip5":"20740","foreign_postal_code":null,"foreign_province":null},"Awarding
+        Agency":"Corporation for National and Community Service","Awarding Agency
+        Code":"485","Awarding Sub Agency":"Corporation for National and Community
+        Service","Description":"ARTICULATE 360 LICENSES","Award Amount":31759.07,"Start
+        Date":"2026-12-01","End Date":"2027-11-30","Base Obligation Date":"2026-11-25","Last
+        Modified Date":"2026-11-25 12:40:22","NAICS":{"code":"541519","description":"OTHER
+        COMPUTER RELATED SERVICES"},"PSC":{"code":"7A21","description":"IT AND TELECOM
+        - BUSINESS APPLICATION SOFTWARE (PERPETUAL LICENSE SOFTWARE)"},"Place of Performance
+        State Code":"DC","Contract Award Type":"DELIVERY ORDER","awarding_agency_id":1166,"agency_slug":"corporation-for-national-and-community-service"},{"internal_id":367378778,"Award
+        ID":"80NSSC27FA108","generated_internal_id":"CONT_AWD_80NSSC27FA108_8000_NNG15SC71B_8000","Recipient
+        Name":"FCN, INC.","recipient_id":"3792ca7f-d5d2-d89c-872b-8c64e4e6390e-C","Recipient
+        UEI":"JEANDJTZ8HJ3","Recipient Location":{"location_country_code":"USA","country_name":"UNITED
+        STATES","state_code":"MD","state_name":"Maryland","city_name":"ROCKVILLE","county_code":"031","county_name":"MONTGOMERY","address_line1":"2600
+        TOWER OAKS BLVD STE 575","address_line2":null,"address_line3":null,"congressional_code":"08","zip4":"4218","zip5":"20852","foreign_postal_code":null,"foreign_province":null},"Awarding
+        Agency":"National Aeronautics and Space Administration","Awarding Agency Code":"080","Awarding
+        Sub Agency":"National Aeronautics and Space Administration","Description":"ENTRUST
+        WCS GATEWAY LICENSE RENEWAL","Award Amount":16683.92,"Start Date":"2027-01-01","End
+        Date":"2027-12-31","Base Obligation Date":"2026-11-25","Last Modified Date":"2026-11-25
+        11:40:57","NAICS":{"code":"541519","description":"OTHER COMPUTER RELATED SERVICES"},"PSC":{"code":"DA10","description":"IT
+        AND TELECOM - BUSINESS APPLICATION/APPLICATION DEVELOPMENT SOFTWARE AS A SERVICE"},"Place
+        of Performance State Code":"MD","Contract Award Type":"DELIVERY ORDER","awarding_agency_id":862,"agency_slug":"national-aeronautics-and-space-administration"},{"internal_id":367378777,"Award
+        ID":"80NSSC27FA107","generated_internal_id":"CONT_AWD_80NSSC27FA107_8000_NNG15SC82B_8000","Recipient
+        Name":"NEW TECH SOLUTIONS, INC.","recipient_id":"e0f8746a-9a3b-810a-257a-cae2d63868da-C","Recipient
+        UEI":"XK11LLUL61A7","Recipient Location":{"location_country_code":"USA","country_name":"UNITED
+        STATES","state_code":"CA","state_name":"California","city_name":"FREMONT","county_code":"001","county_name":"ALAMEDA","address_line1":"4179
+        BUSINESS CENTER DR","address_line2":null,"address_line3":null,"congressional_code":"17","zip4":"6355","zip5":"94538","foreign_postal_code":null,"foreign_province":null},"Awarding
+        Agency":"National Aeronautics and Space Administration","Awarding Agency Code":"080","Awarding
+        Sub Agency":"National Aeronautics and Space Administration","Description":"ENGINEERING
+        WORKSTATION FOR IMAGE PROCESSING","Award Amount":15974.23,"Start Date":"2026-11-25","End
+        Date":"2027-03-15","Base Obligation Date":"2026-11-25","Last Modified Date":"2026-11-25
+        10:59:09","NAICS":{"code":"541519","description":"OTHER COMPUTER RELATED SERVICES"},"PSC":{"code":"7E20","description":"IT
+        and Telecom - End User: Help Desk;Tier 1-2,Workspace,Print,Output,Productivity
+        Tools (HW/Perp SW)"},"Place of Performance State Code":"CA","Contract Award
+        Type":"DELIVERY ORDER","awarding_agency_id":862,"agency_slug":"national-aeronautics-and-space-administration"},{"internal_id":367378776,"Award
+        ID":"80NSSC27F0022","generated_internal_id":"CONT_AWD_80NSSC27F0022_8000_47QTCA18D0081_4732","Recipient
+        Name":"EXECUTIVE INFORMATION SYSTEMS, L.L.C.","recipient_id":"589f33bf-0a5c-824b-5e51-d1c6cb930fb5-C","Recipient
+        UEI":"MKF6VA9NZLR8","Recipient Location":{"location_country_code":"USA","country_name":"UNITED
+        STATES","state_code":"MD","state_name":"Maryland","city_name":"BETHESDA","county_code":"031","county_name":"MONTGOMERY","address_line1":"6903
+        ROCKLEDGE DR STE 760","address_line2":null,"address_line3":null,"congressional_code":"08","zip4":"1818","zip5":"20817","foreign_postal_code":null,"foreign_province":null},"Awarding
+        Agency":"National Aeronautics and Space Administration","Awarding Agency Code":"080","Awarding
+        Sub Agency":"National Aeronautics and Space Administration","Description":"FY27
+        SAS MAINTENANCE RENEWAL","Award Amount":23140.93,"Start Date":"2026-12-01","End
+        Date":"2027-11-30","Base Obligation Date":"2026-11-25","Last Modified Date":"2026-11-25
+        12:26:17","NAICS":{"code":"541519","description":"OTHER COMPUTER RELATED SERVICES"},"PSC":{"code":"DA10","description":"IT
+        AND TELECOM - BUSINESS APPLICATION/APPLICATION DEVELOPMENT SOFTWARE AS A SERVICE"},"Place
+        of Performance State Code":"MD","Contract Award Type":"DELIVERY ORDER","awarding_agency_id":862,"agency_slug":"national-aeronautics-and-space-administration"},{"internal_id":367378651,"Award
+        ID":"75N99027F00003","generated_internal_id":"CONT_AWD_75N99027F00003_7529_75N99024A00001_7529","Recipient
+        Name":"XPECT SOLUTIONS LLC","recipient_id":"ec983421-4e40-141f-4e08-22f6ff10947b-C","Recipient
+        UEI":"CKHRQTHY92F3","Recipient Location":{"location_country_code":"USA","country_name":"UNITED
+        STATES","state_code":"VA","state_name":"Virginia","city_name":"FAIRFAX","county_code":"059","county_name":"FAIRFAX","address_line1":"4035
+        RIDGE TOP RD","address_line2":"STE 250","address_line3":null,"congressional_code":"11","zip4":"7408","zip5":"22030","foreign_postal_code":null,"foreign_province":null},"Awarding
+        Agency":"Department of Health and Human Services","Awarding Agency Code":"075","Awarding
+        Sub Agency":"National Institutes of Health","Description":"PCA-OD-13262 VEHICULAR
+        BARRIER GATE OPERATOR REPLACEMENT","Award Amount":17980.0,"Start Date":"2026-11-25","End
+        Date":"2027-02-05","Base Obligation Date":"2026-11-25","Last Modified Date":"2026-11-25
+        09:30:42","NAICS":{"code":"541519","description":"OTHER COMPUTER RELATED SERVICES"},"PSC":{"code":"R408","description":"SUPPORT-
+        PROFESSIONAL: PROGRAM MANAGEMENT/SUPPORT"},"Place of Performance State Code":"MD","Contract
+        Award Type":"BPA CALL","awarding_agency_id":806,"agency_slug":"department-of-health-and-human-services"},{"internal_id":367378640,"Award
+        ID":"75N98027F00024","generated_internal_id":"CONT_AWD_75N98027F00024_7529_47QTCA24D0058_4732","Recipient
+        Name":"NETCOMM, INC.","recipient_id":"01574b98-be92-3ccb-8f86-2017722f6a92-C","Recipient
+        UEI":"RWB1LBE68Q47","Recipient Location":{"location_country_code":"USA","country_name":"UNITED
+        STATES","state_code":"GA","state_name":"Georgia","city_name":"ATLANTA","county_code":"089","county_name":"DEKALB","address_line1":"303
+        PERIMETER CTR N STE 450","address_line2":null,"address_line3":null,"congressional_code":"04","zip4":"2502","zip5":"30346","foreign_postal_code":null,"foreign_province":null},"Awarding
+        Agency":"Department of Health and Human Services","Awarding Agency Code":"075","Awarding
+        Sub Agency":"National Institutes of Health","Description":"THIS FIRM FIXED
+        PRICE DELIVERY ORDER IS AWARDED IN ACCORDANCE WITH FAR 8.405 FOR FEDRAMP BEACON
+        HR AND FINANCE MODULES TO NETCOMM INC:1108018 IN THE AMOUNT OF $197,567.16.
+        QUOTE 07292026","Award Amount":197567.16,"Start Date":"2026-12-03","End Date":"2027-12-02","Base
+        Obligation Date":"2026-11-25","Last Modified Date":"2026-11-25 09:21:29","NAICS":{"code":"518210","description":"COMPUTING
+        INFRASTRUCTURE PROVIDERS, DATA PROCESSING, WEB HOSTING, AND RELATED SERVICES"},"PSC":{"code":"7B20","description":"IT
+        AND TELECOM - HIGH PERFORMANCE COMPUTE (HARDWARE AND PERPETUAL LICENSE SOFTWARE)"},"Place
+        of Performance State Code":"GA","Contract Award Type":"DELIVERY ORDER","awarding_agency_id":806,"agency_slug":"department-of-health-and-human-services"},{"internal_id":367378549,"Award
+        ID":"75FCMC27F0005","generated_internal_id":"CONT_AWD_75FCMC27F0005_7530_GS35F666GA_4732","Recipient
+        Name":"ODDBALL, INC.","recipient_id":"8c52c101-e5d5-be48-ff24-ae7761803253-C","Recipient
+        UEI":"MHNFNJ1J5RF5","Recipient Location":{"location_country_code":"USA","country_name":"UNITED
+        STATES","state_code":"VA","state_name":"Virginia","city_name":"MCLEAN","county_code":"059","county_name":"FAIRFAX","address_line1":"1775
+        TYSONS BLVD","address_line2":"5TH FLOOR","address_line3":null,"congressional_code":"11","zip4":"4285","zip5":"22102","foreign_postal_code":null,"foreign_province":null},"Awarding
+        Agency":"Department of Health and Human Services","Awarding Agency Code":"075","Awarding
+        Sub Agency":"Centers for Medicare and Medicaid Services","Description":"COMMON
+        WORKING FILE (CWF) IS A MEDICARE PART A AND PART B BENEFIT COORDINATION AND
+        PRE-PAYMENT CLAIMS VALIDATION SYSTEM WHICH USES LOCALIZED DATABASES MAINTAINED
+        BY DESIGNATED CONTRACTORS CALLED ''CWF HOSTS''","Award Amount":5163226.03,"Start
+        Date":"2026-12-01","End Date":"2027-03-31","Base Obligation Date":"2026-11-25","Last
+        Modified Date":"2026-11-25 10:51:53","NAICS":{"code":"541511","description":"CUSTOM
+        COMPUTER PROGRAMMING SERVICES"},"PSC":{"code":"DC10","description":"IT AND
+        TELECOM - DATA CENTER AS A SERVICE"},"Place of Performance State Code":"MD","Contract
+        Award Type":"DELIVERY ORDER","awarding_agency_id":806,"agency_slug":"department-of-health-and-human-services"},{"internal_id":367378506,"Award
+        ID":"7571TE27F80044","generated_internal_id":"CONT_AWD_7571TE27F80044_7571_80TECH26D1335_8000","Recipient
+        Name":"FIERCE SOFTWARE CORP","recipient_id":"254aa527-e0ba-ac9e-bf8b-cd524d6c25a2-C","Recipient
+        UEI":"UYCFM7GJBHK7","Recipient Location":{"location_country_code":"USA","country_name":"UNITED
+        STATES","state_code":"VA","state_name":"Virginia","city_name":"ASHBURN","county_code":"107","county_name":"LOUDOUN","address_line1":"42118
+        PLEASANT FOREST CT","address_line2":null,"address_line3":null,"congressional_code":"10","zip4":"7349","zip5":"20148","foreign_postal_code":null,"foreign_province":null},"Awarding
+        Agency":"Department of Health and Human Services","Awarding Agency Code":"075","Awarding
+        Sub Agency":"Office of the Assistant Secretary for Financial Resources","Description":"PCA-CIT-12026  (27-000XXX)
+        REDHAT ANSIBLE","Award Amount":29260.0,"Start Date":"2026-11-27","End Date":"2027-11-26","Base
+        Obligation Date":"2026-11-25","Last Modified Date":"2026-11-25 10:11:38","NAICS":{"code":"541519","description":"OTHER
+        COMPUTER RELATED SERVICES"},"PSC":{"code":"7A20","description":"IT AND TELECOM
+        - APPLICATION DEVELOPMENT SOFTWARE (PERPETUAL LICENSE SOFTWARE)"},"Place of
+        Performance State Code":"VA","Contract Award Type":"DELIVERY ORDER","awarding_agency_id":806,"agency_slug":"department-of-health-and-human-services"},{"internal_id":367378496,"Award
+        ID":"70ZU0127PMECP0022","generated_internal_id":"CONT_AWD_70ZU0127PMECP0022_7008_-NONE-_-NONE-","Recipient
+        Name":"ALFA LAVAL INC","recipient_id":"d2d22f9f-7837-cd4d-eac1-ad2c4c9f875d-C","Recipient
+        UEI":"CU8MXDBWEVE5","Recipient Location":{"location_country_code":"USA","country_name":"UNITED
+        STATES","state_code":"VA","state_name":"Virginia","city_name":"HENRICO","county_code":"087","county_name":"HENRICO","address_line1":"5400
+        INTERNATIONAL TRADE DR","address_line2":null,"address_line3":null,"congressional_code":"04","zip4":"2927","zip5":"23231","foreign_postal_code":null,"foreign_province":null},"Awarding
+        Agency":"Department of Homeland Security","Awarding Agency Code":"070","Awarding
+        Sub Agency":"U.S. Coast Guard","Description":"USCGC VIGOROUS - FUEL OIL PURIFIER
+        REPAIR SERVICES","Award Amount":13720.0,"Start Date":"2026-11-30","End Date":"2026-12-18","Base
+        Obligation Date":"2026-11-25","Last Modified Date":"2026-11-25 12:26:27","NAICS":{"code":"541511","description":"CUSTOM
+        COMPUTER PROGRAMMING SERVICES"},"PSC":{"code":"J020","description":"MAINT/REPAIR/REBUILD
+        OF EQUIPMENT- SHIP AND MARINE EQUIPMENT"},"Place of Performance State Code":"VA","Contract
+        Award Type":"PURCHASE ORDER","awarding_agency_id":766,"agency_slug":"department-of-homeland-security"},{"internal_id":367378438,"Award
+        ID":"70SBUR27F00000012","generated_internal_id":"CONT_AWD_70SBUR27F00000012_7003_NNG15SD02B_8000","Recipient
+        Name":"PANAMERICA COMPUTERS, INC.","recipient_id":"70e674ba-2d79-d6bb-37c8-a03189735d37-C","Recipient
+        UEI":"DPQEDJ6CXZM5","Recipient Location":{"location_country_code":"USA","country_name":"UNITED
+        STATES","state_code":"VA","state_name":"Virginia","city_name":"LURAY","county_code":"139","county_name":"PAGE","address_line1":"1386
+        BIG OAK RD","address_line2":null,"address_line3":null,"congressional_code":"06","zip4":"5233","zip5":"22835","foreign_postal_code":null,"foreign_province":null},"Awarding
+        Agency":"Department of Homeland Security","Awarding Agency Code":"070","Awarding
+        Sub Agency":"U.S. Citizenship and Immigration Services","Description":"SALESFORCE
+        CRM SOFTWARE SUPPORTS USCIS CALL CENTERS WITH REAL-TIME ACCESS TO CUSTOMER
+        INFORMATION. IT IS A MODERN, INTEGRATED, AND CENTRALIZED CRM TOOL THAT PROVIDES
+        A COMMON INTERFACE FOR ALL RELATED CUSTOMER INFORMATION, WHICH CAN BE ACCESSED,
+        UPDA","Award Amount":11614859.76,"Start Date":"2026-11-30","End Date":"2027-11-29","Base
+        Obligation Date":"2026-11-25","Last Modified Date":"2026-11-25 22:33:20","NAICS":{"code":"541519","description":"OTHER
+        COMPUTER RELATED SERVICES"},"PSC":{"code":"DA10","description":"IT AND TELECOM
+        - BUSINESS APPLICATION/APPLICATION DEVELOPMENT SOFTWARE AS A SERVICE"},"Place
+        of Performance State Code":"MD","Contract Award Type":"DELIVERY ORDER","awarding_agency_id":766,"agency_slug":"department-of-homeland-security"}],"page_metadata":{"page":1,"hasNext":true,"last_record_unique_id":367378438,"last_record_sort_value":"1795564800000"},"messages":["For
+        searches, time period start and end dates are currently limited to an earliest
+        date of 2007-10-01.  For data going back to 2000-10-01, use either the Custom
+        Award Download feature on the website or one of our download or bulk_download
+        API endpoints as listed on https://api.usaspending.gov/docs/endpoints. "]}'
+  recorded_at: Fri, 27 Nov 2026 21:43:11 GMT
+recorded_with: VCR 6.4.1

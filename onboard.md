@@ -11,7 +11,7 @@ read only from Postgres. See `CLAUDE.md` for the full spec.
 
 ## Prerequisites
 
-- Ruby 3.3.14 (see `.ruby-version`; RVM users: build with `--with-openssl-dir=$(brew --prefix openssl@3)`), Bundler 4
+- Ruby 3.3.14 (see `.ruby-version`; RVM users: build with `--with-openssl-dir=$(brew --prefix openssl@3)`), Bundler 4. Non-interactive shells (agents, scripts) don't get RVM's auto-switch: run `source ~/.rvm/scripts/rvm && rvm use 3.3.14` first.
 - PostgreSQL (local, running; CI uses 16)
 - Node (for `npx @modelcontextprotocol/inspector`)
 - `gh` CLI (logged in), Heroku CLI (`heroku login`)
@@ -57,7 +57,10 @@ _Filled in as of Milestone 6._ MCP Inspector: `npx @modelcontextprotocol/inspect
 - `spec/factories/`: FactoryBot factories for all four models
 - `app/mcp/tools/`: MCP tool classes (thin)
 - `app/queries/`: query objects (business logic)
-- `app/services/`: `Usaspending::Client`, `AwardMapper`, `AwardSync`
+- `app/services/usaspending/client.rb`: Faraday client for `spending_by_award` (retries, 25s timeout, page-based; max 50k results per window)
+- `app/services/usaspending/award_mapper.rb`: raw result -> Agency/Recipient/Award attributes keyed by natural keys
+- `app/services/`: `AwardSync` (M4)
+- `spec/cassettes/usaspending/`: recorded real API responses; `cassette_body(name)` in specs reads one
 
 ## Conventions
 
