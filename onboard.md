@@ -53,8 +53,8 @@ _Filled in as of Milestone 6._ MCP Inspector: `npx @modelcontextprotocol/inspect
 
 ## Repo map
 
-_Filled in as code lands._
-
+- `app/models/`: `Agency`, `Recipient`, `Award`, `SyncRun` (`SyncRun.data_freshness` feeds tool responses)
+- `spec/factories/`: FactoryBot factories for all four models
 - `app/mcp/tools/`: MCP tool classes (thin)
 - `app/queries/`: query objects (business logic)
 - `app/services/`: `Usaspending::Client`, `AwardMapper`, `AwardSync`
