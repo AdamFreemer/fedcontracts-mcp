@@ -87,6 +87,27 @@ RSpec.describe EndDateEnricher do
       expect(awards.first.reload.details_checked_at).to be_nil
     end
 
+    it "records a succeeded end_dates sync run with counts" do
+      create_list(:award, 2, amount: 500_000, end_date: today + 30, raw: modified)
+
+      enrich(FakeDetailClient.new)
+
+      run = SyncRun.end_dates.last
+      expect(run).to have_attributes(status: "succeeded", records_upserted: 2, error: nil)
+      expect(run.details).to include("checked" => 2, "failed" => 0, "remaining" => 0, "stopped_early" => false)
+      expect(SyncRun.data_freshness).to be_nil # end-date runs don't count as award freshness
+    end
+
+    it "records a failed run with the last error when it stops early" do
+      create_list(:award, 12, amount: 500_000, end_date: today + 30, raw: modified)
+
+      enrich(FakeDetailClient.new({}, failing: :all))
+
+      run = SyncRun.end_dates.last
+      expect(run).to have_attributes(status: "failed", error: /Stopped after 10 consecutive failures. Last: boom/)
+      expect(run.details).to include("stopped_early" => true, "remaining" => 12)
+    end
+
     it "stops early after repeated consecutive failures, without raising" do
       create_list(:award, 15, amount: 500_000, end_date: today + 30, raw: modified)
       client = FakeDetailClient.new({}, failing: :all)

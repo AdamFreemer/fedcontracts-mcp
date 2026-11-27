@@ -91,6 +91,13 @@ RSpec.describe Usaspending::Client do
       expect(a_request(:post, url)).to have_been_made.once
     end
 
+    it "labels dropped connections as likely rate limiting" do
+      stub_request(:post, url).to_raise(Faraday::SSLError.new("SSL_read: unexpected eof while reading"))
+
+      expect { client.spending_by_award(**args) }
+        .to raise_error(Usaspending::Client::ConnectionRefused, /refused or dropped the connection \(often rate limiting/)
+    end
+
     it "raises on timeouts after retrying" do
       stub_request(:post, url).to_timeout
 

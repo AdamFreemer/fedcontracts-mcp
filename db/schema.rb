@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_28_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_28_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pg_trgm"
@@ -81,7 +81,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_28_010000) do
     t.text "error"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["status", "finished_at"], name: "index_sync_runs_on_status_and_finished_at"
+    t.string "kind", default: "awards", null: false
+    t.jsonb "details", default: {}, null: false
+    t.index ["kind", "status", "finished_at"], name: "index_sync_runs_on_kind_and_status_and_finished_at"
   end
 
   add_foreign_key "awards", "agencies", column: "awarding_agency_id"

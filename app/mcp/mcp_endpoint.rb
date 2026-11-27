@@ -19,8 +19,29 @@ class McpEndpoint
     much of the hiring on large programs, are not included.
   TEXT
 
+  # Bodies here are small JSON-RPC calls; reject anything bigger early.
+  MAX_REQUEST_BYTES = 64 * 1024
+
   def self.call(env)
+    return unauthorized unless authorized?(env)
+
     transport.call(env)
+  end
+
+  # Optional shared secret. When MCP_BEARER_TOKEN is set, every request must send
+  # `Authorization: Bearer <token>`. Unset (the public demo), the endpoint is open.
+  def self.authorized?(env)
+    token = ENV["MCP_BEARER_TOKEN"].to_s
+    return true if token.empty?
+
+    header = env["HTTP_AUTHORIZATION"].to_s
+    provided = header.start_with?("Bearer ") ? header.delete_prefix("Bearer ") : ""
+    ActiveSupport::SecurityUtils.secure_compare(provided, token)
+  end
+
+  def self.unauthorized
+    body = { jsonrpc: "2.0", error: { code: -32001, message: "Unauthorized: send Authorization: Bearer <token>" } }.to_json
+    [ 401, { "content-type" => "application/json", "www-authenticate" => 'Bearer realm="fedcontracts"' }, [ body ] ]
   end
 
   def self.server
@@ -40,7 +61,8 @@ class McpEndpoint
       stateless: true,
       enable_json_response: true,
       serve_subscriptions_listen: false,
-      allowed_hosts: allowed_hosts
+      allowed_hosts: allowed_hosts,
+      max_request_bytes: MAX_REQUEST_BYTES
     )
   end
 

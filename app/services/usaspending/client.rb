@@ -35,6 +35,8 @@ module Usaspending
     ].freeze
 
     Error = Class.new(StandardError)
+    # Raised when USAspending drops or refuses connections, which is how it rate-limits.
+    ConnectionRefused = Class.new(Error)
     Page = Data.define(:results, :has_next)
 
     def initialize(max_retries: 4, retry_interval: 1.0, timeout: 25)
@@ -61,31 +63,35 @@ module Usaspending
         page: page
       }
 
-      response = connection.post(SPENDING_BY_AWARD_PATH, body)
+      response = request { connection.post(SPENDING_BY_AWARD_PATH, body) }
       Page.new(results: response.body.fetch("results"), has_next: response.body.dig("page_metadata", "hasNext") == true)
-    rescue Faraday::Error => e
-      raise Error, "USAspending request failed: #{e.class}: #{e.response_status || e.message}"
     rescue KeyError, NoMethodError => e
       raise Error, "Unexpected USAspending response shape: #{e.message}"
     end
 
     # All toptier agencies: [{ "toptier_code" => "070", "abbreviation" => "DHS", ... }, ...]
     def toptier_agencies
-      connection.get(TOPTIER_AGENCIES_PATH).body.fetch("results")
-    rescue Faraday::Error => e
-      raise Error, "USAspending request failed: #{e.class}: #{e.response_status || e.message}"
+      request { connection.get(TOPTIER_AGENCIES_PATH) }.body.fetch("results")
     rescue KeyError, NoMethodError => e
       raise Error, "Unexpected USAspending response shape: #{e.message}"
     end
 
     # Full award detail, including period_of_performance.potential_end_date.
     def award(generated_internal_id)
-      connection.get(format(AWARD_PATH, ERB::Util.url_encode(generated_internal_id))).body.to_h
-    rescue Faraday::Error => e
-      raise Error, "USAspending request failed: #{e.class}: #{e.response_status || e.message}"
+      request { connection.get(format(AWARD_PATH, ERB::Util.url_encode(generated_internal_id))) }.body.to_h
     end
 
     private
+
+    # Runs a request (retries happen inside the connection) and translates failures.
+    def request
+      yield
+    rescue Faraday::SSLError, Faraday::ConnectionFailed => e
+      raise ConnectionRefused, "USAspending refused or dropped the connection (often rate limiting; " \
+                               "it clears on its own): #{e.class}: #{e.message}"
+    rescue Faraday::Error => e
+      raise Error, "USAspending request failed: #{e.class}: #{e.response_status || e.message}"
+    end
 
     def connection
       @connection ||= Faraday.new(url: BASE_URL) do |f|

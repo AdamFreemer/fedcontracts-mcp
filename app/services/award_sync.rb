@@ -27,7 +27,7 @@ class AwardSync
   end
 
   def call
-    sync_run = SyncRun.create!(started_at: Time.current)
+    sync_run = SyncRun.create!(kind: "awards", started_at: Time.current)
     abbreviations = fetch_abbreviations
 
     windows.each do |window_start, window_end|

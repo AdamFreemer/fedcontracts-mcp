@@ -19,7 +19,7 @@ module Tools
     input_schema(
       type: "object",
       properties: {
-        name: { type: "string", minLength: 2, description: "Company legal name or part of it" },
+        name: { type: "string", minLength: 2, maxLength: 200, description: "Company legal name or part of it" },
         uei: { type: "string", pattern: "^[A-Za-z0-9]{12}$", description: "12-character Unique Entity ID" }
       },
       additionalProperties: false

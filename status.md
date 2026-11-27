@@ -4,7 +4,7 @@ _Last updated: 2026-11-27_
 
 ## Current milestone
 
-**Milestone 7** — done. Next: Milestone 8.
+**Milestone 8** — done. Next: Milestone 9.
 
 ## Milestones
 
@@ -18,7 +18,7 @@ _Last updated: 2026-11-27_
 | 5 | Query objects + specs | done |
 | 6 | MCP endpoint + `search_awards`, verified in Inspector + Claude | done |
 | 7 | Remaining three tools | done |
-| 8 | rack-attack, input clamping, error handling | not started |
+| 8 | rack-attack, input clamping, error handling | done |
 | 9 | Landing page | not started |
 | 10 | Heroku deploy, backfill, scheduler, prod smoke test | not started |
 | 11 | README, diagram, example prompts, screenshots | not started |
@@ -26,7 +26,7 @@ _Last updated: 2026-11-27_
 
 ## Next step
 
-Milestone 8: rack-attack throttle on `/mcp` (60/min/IP), optional `MCP_BEARER_TOKEN`, review input clamping and error handling end to end. Most clamping and error shaping already landed in M5–M7; M8 is mainly the throttle, the token, and a pass for gaps. The local end-date enrichment is still filling (5,000 per run); re-check `recompete_only` once it has.
+Milestone 9: landing page at `/` with connection instructions (Claude, Claude Code, Inspector), example prompts from `examples.md`, and a **public status panel** fed by `DataHealth#report` (sync age with ok/stale badge, award count, end-date backlog, recent sync runs; no error text). Needs HTML rendering in an API-only app (one controller on `ActionController::Base`, or a static page plus `/health/data` fetched by JS).
 
 ## Blockers
 
@@ -46,7 +46,7 @@ None.
 10. **Company acronyms aren't matched.** `company_profile(name: "GDIT")` finds nothing; the recipient is "GENERAL DYNAMICS INFORMATION TECHNOLOGY". Fine for v1; tool description should ask for the company's legal name.
 11. **Current vs. potential end date — resolved at M7.** A sample of 40 contracts "expiring in 180 days" had 19 with option years remaining. `EndDateEnricher` fetches `potential_end_date` from `/api/v2/awards/<id>/` for awards >= $100k ending between 2 years ago and 1 year ahead, re-checking only when USAspending's Last Modified Date moves. `expiring_contracts` labels each result `final_period` / `options_remaining` / `unknown` and supports `recompete_only`. Runs one request at a time (~1–2/s), soonest-ending first, max 5,000 per run, and stops after 10 consecutive failures. The ~42k-award first pass therefore takes several daily runs; the 180-day window fills first.
 12. **Subawards (v2 candidate, strong).** Spec lists subawards as a v1 non-goal. DGIB shows why they matter for this audience: 47% of obligations ($233M) went to 20+ small subs, and that's where many engineers are employed. Small firms looking for primes to team with are a likely user group too. Bear case: subaward data is self-reported by primes, first tier only, late and patchy, and it needs a second sync, table, and tool. `spending_by_award` supports `subawards: true` mode, so the client mostly carries over. Don't start before v1 ships.
-13. **USAspending blocks bursts.** On 2026-11-27 a 4-thread enrichment run (~10 req/s, right after a 100k-record backfill) got our IP connection-reset on every endpoint (curl too). Never parallelize calls to USAspending; the sync and enricher are both sequential. If production gets blocked, the daily incremental sync fails and data_freshness goes stale until it lifts. Tool calls are unaffected (Postgres only).
+13. **USAspending blocks bursts — monitoring added at M8.** On 2026-11-27 a 4-thread enrichment run (~10 req/s, right after a 100k-record backfill) got our IP connection-reset on every endpoint (curl too). Never parallelize calls to USAspending; the sync and enricher are both sequential. If production gets blocked, the daily incremental sync fails and data_freshness goes stale until it lifts. Tool calls are unaffected (Postgres only). M8: `/health/data` returns 503 when the last successful award sync is over 36h old (point an external uptime monitor at it in M10); dropped connections raise `Usaspending::Client::ConnectionRefused` and runs are flagged `rate_limited`; tool responses carry `data_freshness.stale`.
 
 ## Decisions log
 
@@ -84,3 +84,8 @@ None.
 - 2026-11-27: M7 result limit max lowered 100 -> 50 (spec said 100). A 100-contract `expiring_contracts` response was 76k chars, over Claude Code's tool-output limit; 50 is ~38k. Dropped `naics_description` from award lists.
 - 2026-11-27: M7 `expiring_contracts` reports `unchecked_count` and says so in the summary, so an empty `recompete_only` result isn't mistaken for "no recompetes" while enrichment is incomplete.
 - 2026-11-27: M7 headless Claude checks with `examples.md` prompts (DID(IT), DGIB, VA recent + expiring) used all four tools sensibly. Found an unconfirmed DID(IT) -> ODOS 3.1 link and a DGIB follow-on order ending 2026-12-29. Exposed the payload-size bug and the signing-date window trap in `search_awards` (description now says to widen `days`).
+- 2026-11-27: Pipeline visibility (Adam's call): public status panel on the M9 landing page plus an external uptime alert on `/health/data`. No admin portal (would need auth, mostly duplicates `heroku logs`/console; buttons can't run multi-minute jobs inside Heroku's 30s request limit). Read-only admin behind Basic auth remains an easy v1.1 add-on.
+- 2026-11-27: M8 `sync_runs.kind` (`awards` | `end_dates`) + `details` jsonb. EndDateEnricher records its own run (checked/failed/remaining/stopped_early); `sync:*` tasks exit non-zero if enrichment stopped early. `data_freshness` only counts award runs.
+- 2026-11-27: M8 `/health/data` is public, so it summarizes failures (status, counts, `rate_limited`) and never echoes error text. 30 req/min/IP.
+- 2026-11-27: M8 rack-attack: `/mcp` 60 req/min/IP (`MCP_RATE_LIMIT_PER_MINUTE`), JSON-RPC-shaped 429 with Retry-After. In-memory store: per process, so limits multiply with dynos/Puma workers. Disabled in specs except `rate_limit_spec`.
+- 2026-11-27: M8 optional `MCP_BEARER_TOKEN` (constant-time compare, 401 + WWW-Authenticate). Transport `max_request_bytes` 64 KiB. String inputs have `maxLength` (keyword/name 200, agency 100).

@@ -43,7 +43,7 @@ RSpec.describe "MCP endpoint", type: :request do
 
       sc = result["structuredContent"]
       expect(sc).to include("total_count" => 1, "matched_agencies" => [ "U.S. Citizenship and Immigration Services" ])
-      expect(sc.dig("data_freshness", "last_successful_sync")).to eq("2026-11-27T06:00:00Z")
+      expect(sc["data_freshness"]).to include("last_successful_sync" => "2026-11-27T06:00:00Z", "stale" => false)
       expect(sc["awards"].first).to include(
         "piid" => "70SBUR22F00000004",
         "recipient" => { "name" => "EXCELLA, LLC", "uei" => "KMKUAFKECJ83" },
@@ -72,7 +72,8 @@ RSpec.describe "MCP endpoint", type: :request do
     end
 
     it "rejects out-of-range, wrongly typed, and unknown arguments as tool errors" do
-      [ { limit: 500 }, { days: 0 }, { days: "ninety" }, { state: "Virginia" }, { bogus: 1 } ].each do |args|
+      [ { limit: 500 }, { limit: 51 }, { days: 0 }, { days: "ninety" }, { state: "Virginia" }, { bogus: 1 },
+        { keyword: "x" * 201 } ].each do |args|
         result = call_tool("search_awards", args)
         expect(result["isError"]).to be(true), "expected #{args} to be rejected"
         expect(result.dig("content", 0, "text")).to start_with("Invalid arguments")
@@ -178,6 +179,14 @@ RSpec.describe "MCP endpoint", type: :request do
         expect(call_tool("company_profile", { name: "  " })["isError"]).to be(true)
         expect(call_tool("company_profile", { uei: "short" })["isError"]).to be(true)
       end
+    end
+  end
+
+  describe "request size" do
+    it "rejects oversized bodies" do
+      post "/mcp", params: { jsonrpc: "2.0", id: 1, method: "tools/list", params: { pad: "x" * 70_000 } }.to_json,
+                   headers: McpHelpers::MCP_HEADERS
+      expect(response).to have_http_status(:payload_too_large)
     end
   end
 

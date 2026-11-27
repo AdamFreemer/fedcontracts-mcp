@@ -26,8 +26,8 @@ module Tools
     input_schema(
       type: "object",
       properties: {
-        keyword: { type: "string", description: "Substring to match in the award description" },
-        agency: { type: "string", description: "Agency abbreviation, sub-agency acronym, or name fragment" },
+        keyword: { type: "string", maxLength: 200, description: "Substring to match in the award description" },
+        agency: { type: "string", maxLength: 100, description: "Agency abbreviation, sub-agency acronym, or name fragment" },
         naics_code: { type: "string", description: "6-digit NAICS code, e.g. 541512", pattern: "^[0-9]{2,6}$" },
         state: { type: "string", description: "2-letter place-of-performance state code, e.g. VA", pattern: "^[A-Za-z]{2}$" },
         min_amount: { type: "number", minimum: 0, description: "Minimum award amount in USD" },

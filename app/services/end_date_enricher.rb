@@ -31,15 +31,17 @@ class EndDateEnricher
   end
 
   def call
+    sync_run = SyncRun.create!(kind: "end_dates", started_at: Time.current)
     batch = prioritized_candidates.limit(@max_per_run).pluck(:id, :generated_internal_id)
     @logger.info("[EndDateEnricher] checking #{batch.size} awards (soonest-ending first)")
     checked = failed = consecutive_failures = 0
     stopped_early = false
+    last_error = nil
 
     batch.each_with_index do |(id, gid), index|
       sleep(@request_interval) if index.positive? && @request_interval.positive?
 
-      if enrich(id, gid)
+      if (last_error = enrich(id, gid)).nil?
         checked += 1
         consecutive_failures = 0
         @logger.info("[EndDateEnricher] #{checked}/#{batch.size}") if (checked % 250).zero?
@@ -56,7 +58,11 @@ class EndDateEnricher
 
     result = Result.new(checked:, failed:, remaining: self.class.candidates(today: @today).count, stopped_early:)
     @logger.info("[EndDateEnricher] done: #{result.checked} checked, #{result.failed} failed, #{result.remaining} remaining")
+    finish(sync_run, result, last_error)
     result
+  rescue StandardError => e
+    sync_run&.update!(status: :failed, finished_at: Time.current, error: "#{e.class}: #{e.message}".truncate(1000))
+    raise
   end
 
   private
@@ -67,13 +73,24 @@ class EndDateEnricher
         .order(Arel.sql(Award.sanitize_sql_array([ "awards.end_date < ?, awards.end_date ASC, awards.id ASC", @today ])))
   end
 
+  def finish(sync_run, result, last_error)
+    sync_run.update!(
+      status: result.stopped_early ? :failed : :succeeded,
+      finished_at: Time.current,
+      records_upserted: result.checked,
+      details: { checked: result.checked, failed: result.failed, remaining: result.remaining, stopped_early: result.stopped_early },
+      error: result.stopped_early ? "Stopped after #{MAX_CONSECUTIVE_FAILURES} consecutive failures. Last: #{last_error}".truncate(1000) : nil
+    )
+  end
+
+  # Returns nil on success, or the error message.
   def enrich(id, gid)
     detail = @client.award(gid)
     potential = detail.dig("period_of_performance", "potential_end_date").to_s[0, 10].presence
     Award.where(id:).update_all(potential_end_date: potential && Date.iso8601(potential), details_checked_at: Time.current)
-    true
+    nil
   rescue Usaspending::Client::Error, Date::Error => e
     @logger.warn("[EndDateEnricher] #{gid}: #{e.message}")
-    false
+    e.message
   end
 end

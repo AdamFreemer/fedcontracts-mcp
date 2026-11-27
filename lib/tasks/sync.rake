@@ -14,8 +14,9 @@ namespace :sync do
 
   def run_end_date_enrichment(logger)
     result = EndDateEnricher.new(logger:).call
-    puts "End dates: #{result.checked} checked, #{result.failed} failed, #{result.remaining} remaining" \
-         "#{' (stopped early after repeated failures)' if result.stopped_early}"
+    puts "End dates: #{result.checked} checked, #{result.failed} failed, #{result.remaining} remaining"
+    # Non-zero exit so the scheduler shows a failed job; the award data is already saved.
+    abort "End-date lookups stopped early after repeated failures (see sync_runs)." if result.stopped_early
   end
 
   desc "Backfill contract awards (default 730 days; override with DAYS=30), then fetch potential end dates"

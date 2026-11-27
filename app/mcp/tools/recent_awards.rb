@@ -20,7 +20,7 @@ module Tools
     input_schema(
       type: "object",
       properties: {
-        agency: { type: "string", description: "Agency abbreviation, sub-agency acronym, or name fragment (optional)" },
+        agency: { type: "string", maxLength: 100, description: "Agency abbreviation, sub-agency acronym, or name fragment (optional)" },
         days: { type: "integer", minimum: 1, maximum: 365, description: "Look back this many days by signed date (default 30)" },
         limit: { type: "integer", minimum: 1, maximum: 50, description: "Max awards and companies to return (default 25)" }
       },

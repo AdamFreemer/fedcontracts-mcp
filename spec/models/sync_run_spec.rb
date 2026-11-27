@@ -13,6 +13,11 @@ RSpec.describe SyncRun do
     expect(build(:sync_run, started_at: nil)).not_to be_valid
   end
 
+  it "defaults to the awards kind and rejects unknown kinds" do
+    expect(create(:sync_run).kind).to eq("awards")
+    expect(build(:sync_run, kind: "bogus")).not_to be_valid
+  end
+
   describe ".data_freshness" do
     it "is nil when no sync has succeeded" do
       create(:sync_run)
@@ -24,6 +29,7 @@ RSpec.describe SyncRun do
       create(:sync_run, :succeeded, finished_at: 2.days.ago)
       latest = create(:sync_run, :succeeded, finished_at: 1.day.ago)
       create(:sync_run, :failed, finished_at: 1.hour.ago)
+      create(:sync_run, :succeeded, kind: "end_dates", finished_at: 1.minute.ago)
       expect(SyncRun.data_freshness).to be_within(1.second).of(latest.finished_at)
     end
   end

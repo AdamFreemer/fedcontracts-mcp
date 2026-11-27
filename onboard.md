@@ -84,6 +84,9 @@ Deployed hostnames must be listed in `MCP_ALLOWED_HOSTS` or the transport return
 - `app/mcp/mcp_endpoint.rb`: Rack app mounted at `/mcp`; builds the server (name, instructions, tools) and stateless transport
 - `app/mcp/tools/`: MCP tool classes (thin). `Tools::Base` has the response helpers (`respond`, `error`, `award_json`, `data_freshness`)
 - `spec/requests/mcp_spec.rb`: protocol-level specs (handshake, list, call, errors, host check)
+- `app/services/data_health.rb`: freshness/staleness, recent run summaries, backlog; feeds `/health/data`, tool `data_freshness`, and the landing page
+- `app/controllers/health_controller.rb`: `GET /health/data` (200 ok / 503 stale or never synced)
+- `config/initializers/rack_attack.rb`: per-IP throttles
 - `app/queries/`: query objects, one per tool: `AwardSearch`, `RecentAwards`, `ExpiringContracts`, `CompanyProfile`; shared `AgencyFilter` (abbreviation/acronym/name matching) and `QueryLimits` (clamps)
 - `spec/support/query_fixtures.rb`: fixed-date dataset modeled on `examples.md` for query specs
 - `app/services/usaspending/client.rb`: Faraday client for `spending_by_award` (retries, 25s timeout, page-based; max 50k results per window)
@@ -109,3 +112,11 @@ Deployed hostnames must be listed in `MCP_ALLOWED_HOSTS` or the transport return
 ## Deploy
 
 _Filled in as of Milestone 10._ See the Heroku section of `CLAUDE.md`.
+
+Config vars so far:
+- `MCP_ALLOWED_HOSTS`: deployed hostname(s), comma-separated. **Required**, or `/mcp` returns 403.
+- `MCP_BEARER_TOKEN`: optional; when set, `/mcp` requires `Authorization: Bearer <token>`. Leave unset for the public demo.
+- `MCP_RATE_LIMIT_PER_MINUTE`: optional, default 60 per IP.
+- `SYNC_NAICS`: optional NAICS override for the sync.
+
+Monitoring: point an external uptime monitor (UptimeRobot, Better Stack) at `GET /health/data`. It returns 503 when the last successful award sync is over 36 hours old.

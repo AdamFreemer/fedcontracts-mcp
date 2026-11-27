@@ -23,7 +23,7 @@ module Tools
     input_schema(
       type: "object",
       properties: {
-        agency: { type: "string", description: "Agency abbreviation, sub-agency acronym, or name fragment (optional)" },
+        agency: { type: "string", maxLength: 100, description: "Agency abbreviation, sub-agency acronym, or name fragment (optional)" },
         within_days: { type: "integer", minimum: 1, maximum: 730, description: "Window ahead from today in days (default 180)" },
         min_amount: { type: "number", minimum: 0, description: "Minimum award amount in USD" },
         recompete_only: { type: "boolean", description: "Only contracts in their final period (default false)" },

@@ -27,11 +27,7 @@ module Tools
       end
 
       def data_freshness
-        last = SyncRun.data_freshness
-        {
-          last_successful_sync: last&.iso8601,
-          note: last ? "Data reflects USAspending as of the last successful sync." : "No successful sync yet; data may be empty."
-        }
+        DataHealth.new.freshness
       end
 
       def award_json(award)
