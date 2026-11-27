@@ -11,14 +11,12 @@ read only from Postgres. See `CLAUDE.md` for the full spec.
 
 ## Prerequisites
 
-- Ruby 3.3+, Bundler
-- PostgreSQL (local, running)
+- Ruby 3.3.14 (see `.ruby-version`; RVM users: build with `--with-openssl-dir=$(brew --prefix openssl@3)`), Bundler 4
+- PostgreSQL (local, running; CI uses 16)
 - Node (for `npx @modelcontextprotocol/inspector`)
 - `gh` CLI (logged in), Heroku CLI (`heroku login`)
 
 ## Local setup
-
-_Filled in as of Milestone 1._
 
 ```sh
 bundle install
@@ -27,11 +25,23 @@ bin/rails db:prepare
 
 ## Running
 
-_Filled in as of Milestone 1/6._
+```sh
+bin/rails server        # http://localhost:3000/up returns 200
+```
+
+The MCP endpoint lands at Milestone 6.
 
 ## Tests
 
-_Filled in as of Milestone 1._ RSpec: `bundle exec rspec`.
+```sh
+bundle exec rspec       # specs (FactoryBot, WebMock, VCR in spec/support/)
+bin/rubocop             # lint (rails-omakase)
+bin/brakeman --no-pager # security scan
+bin/bundler-audit       # gem advisories
+```
+
+Real HTTP is blocked in tests. USAspending responses come from VCR cassettes in `spec/cassettes/`.
+CI (`.github/workflows/ci.yml`) runs all four on pushes to `master` and on PRs.
 
 ## Loading data
 
