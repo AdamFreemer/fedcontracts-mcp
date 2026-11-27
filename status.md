@@ -30,7 +30,7 @@ Restart Claude Code so project plugins load, verify tooling, then start Mileston
 
 ## Blockers
 
-- Heroku CLI auth: `heroku auth:whoami` reports an expired token. Fix with `heroku login`; this is needed for the Heroku MCP server.
+None.
 
 ## Open questions / risks
 
@@ -42,7 +42,7 @@ Restart Claude Code so project plugins load, verify tooling, then start Mileston
 ## Decisions log
 
 - 2026-11-27: Rails app lives at the repo root (not a `fedcontracts/` subdirectory).
-- 2026-11-27: One repo, `fedcontracts-mcp`. Registry name `io.github.adamfreemer/fedcontracts`. Positioning: curated hiring/recompete signals, not full USAspending coverage (that space is crowded).
+- 2026-11-27: One public repo, `fedcontracts-mcp` (default branch `master`). Registry name `io.github.adamfreemer/fedcontracts`. Positioning: curated hiring/recompete signals, not full USAspending coverage (that space is crowded).
 - 2026-11-27: Planned `rails new . --api -d postgresql --skip-solid --skip-kamal --skip-test` (Heroku, single DB, RSpec).
 - 2026-11-27: Claude tooling at project scope: `mcp-server-dev` and `playwright` plugins, Heroku MCP (`heroku mcp:start`) in `.mcp.json`. Use `gh` CLI instead of the GitHub MCP. No extra design plugins (`frontend-design` is enabled at user level).
 - 2026-11-27: Heroku: Basic dyno or higher (Eco sleeps); Essential-0 Postgres should be enough.
