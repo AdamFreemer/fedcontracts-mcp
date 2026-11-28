@@ -58,6 +58,12 @@ class DataHealth
     }
   end
 
+  # Latest sync runs of either kind, newest first, for the landing page. Same
+  # public summary as the report: no error text.
+  def recent_runs(limit: 10)
+    SyncRun.order(started_at: :desc).limit(limit).map { |run| run_summary(run).merge(kind: run.kind) }
+  end
+
   private
 
   def freshness_note

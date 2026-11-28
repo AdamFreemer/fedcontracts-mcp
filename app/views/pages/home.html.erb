@@ -1,0 +1,153 @@
+<main>
+  <header>
+    <h1>FedContracts MCP</h1>
+    <p class="lede">
+      Federal IT and software contract awards from USAspending.gov, served as tools your AI
+      assistant can call. Ask who just won work at an agency, which contracts end soon and may be
+      recompeted, or what a company's federal business looks like. Built for job seekers and small
+      contractors reading the market for hiring signals.
+    </p>
+
+    <div class="endpoint">
+      <label for="mcp-url">Connection URL</label>
+      <div class="field">
+        <input id="mcp-url" type="text" value="<%= @mcp_url %>" readonly spellcheck="false" aria-describedby="mcp-url-note">
+        <button type="button" id="copy-url">Copy</button>
+      </div>
+      <small id="mcp-url-note">Remote MCP server over Streamable HTTP. Read-only, no account or API key.</small>
+    </div>
+  </header>
+
+  <section aria-labelledby="connect">
+    <h2 id="connect">Connect</h2>
+    <dl class="clients">
+      <dt>Claude.ai and Claude Desktop</dt>
+      <dd>Settings, Connectors, Add custom connector. Paste the connection URL.</dd>
+
+      <dt>Claude Code</dt>
+      <dd><pre>claude mcp add --transport http fedcontracts <%= @mcp_url %></pre></dd>
+
+      <dt>MCP Inspector</dt>
+      <dd>Run <code>npx @modelcontextprotocol/inspector</code>, choose Streamable HTTP, and paste the URL.</dd>
+
+      <dt>curl</dt>
+      <dd><pre>curl -s <%= @mcp_url %> \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'</pre></dd>
+    </dl>
+  </section>
+
+  <section aria-labelledby="tools">
+    <h2 id="tools">Tools</h2>
+    <ul class="tools">
+      <% @tools.each do |tool| %>
+        <li>
+          <h3><%= tool.title %></h3>
+          <code><%= tool.name_value %></code>
+          <p><%= tool_summary(tool) %></p>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+
+  <section aria-labelledby="prompts">
+    <h2 id="prompts">Try asking</h2>
+    <ul class="prompts">
+      <li>Who won VA IT contracts in the last month, and who might be staffing up?</li>
+      <li>What's the status of the USCIS DID(IT) contract, and is a recompete coming?</li>
+      <li>Which big VA contracts are likely up for recompete in the next 6 months?</li>
+      <li>Profile Excella's federal work: agencies, totals, and trend.</li>
+      <li>Which companies won DHS software or cloud contracts this quarter?</li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="status">
+    <h2 id="status">Data pipeline</h2>
+    <p>
+      <span class="badge" data-status="<%= @report[:status] %>"><%= PagesHelper::STATUS_LABELS.fetch(@report[:status]) %></span>
+    </p>
+    <dl class="stats">
+      <div>
+        <dt>Last successful sync</dt>
+        <dd><%= relative_time(@report[:last_successful_sync]) %>
+          <% if @report[:last_successful_sync] %><span><%= @report[:last_successful_sync] %></span><% end %></dd>
+      </div>
+      <div>
+        <dt>Awards stored</dt>
+        <dd><%= number_with_delimiter(@report[:awards]) %></dd>
+      </div>
+      <div>
+        <dt>Awards awaiting an end-date check</dt>
+        <dd><%= number_with_delimiter(@report[:awards_without_end_dates]) %></dd>
+      </div>
+      <% { "Last award sync" => @report[:last_award_sync], "Last end-date check" => @report[:last_end_date_run] }.each do |label, run| %>
+        <div>
+          <dt><%= label %></dt>
+          <% if run %>
+            <dd><%= run_status(run) %>, <%= relative_time(run[:started_at]) %>
+              <span><%= number_with_delimiter(run[:records]) %> records, <%= run_duration(run) %></span></dd>
+          <% else %>
+            <dd class="muted">none yet</dd>
+          <% end %>
+        </div>
+      <% end %>
+    </dl>
+
+    <% if @runs.any? %>
+      <div class="table-wrap">
+        <table>
+          <caption>Recent runs</caption>
+          <thead>
+            <tr><th>Kind</th><th>Status</th><th>Started</th><th class="num">Duration</th><th class="num">Records</th></tr>
+          </thead>
+          <tbody>
+            <% @runs.each do |run| %>
+              <tr>
+                <td><%= PagesHelper::KIND_LABELS.fetch(run[:kind], run[:kind]) %></td>
+                <td class="status-<%= run[:status] %>"><%= run_status(run) %></td>
+                <td><%= relative_time(run[:started_at]) %></td>
+                <td class="num"><%= run_duration(run) %></td>
+                <td class="num"><%= number_with_delimiter(run[:records]) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+    <p class="muted">Machine-readable: <a href="/health/data">/health/data</a> (503 when the data is stale).</p>
+  </section>
+
+  <section aria-labelledby="caveats">
+    <h2 id="caveats">What the data covers</h2>
+    <ul class="caveats">
+      <li>Prime contracts only. Subcontractors, who do much of the hiring on large programs, are not included.</li>
+      <li>IT and software NAICS codes (541511, 541512, 541513, 541519, 518210) with activity in about the last 2 years.</li>
+      <li>Department of Defense data publishes with a ~90 day delay, so recent DoD awards are sparse.</li>
+      <li>Synced from USAspending once a day. Tool calls read this server's database, never USAspending live.</li>
+    </ul>
+  </section>
+
+  <footer>
+    Data from <a href="https://www.usaspending.gov">USAspending.gov</a>. FedContracts <%= Fedcontracts::VERSION %>.
+  </footer>
+</main>
+<script>
+  (function () {
+    var button = document.getElementById("copy-url");
+    var input = document.getElementById("mcp-url");
+    button.addEventListener("click", function () {
+      input.select();
+      var done = function () {
+        button.textContent = "Copied";
+        setTimeout(function () { button.textContent = "Copy"; }, 2000);
+      };
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(input.value).then(done, function () { document.execCommand("copy"); done(); });
+      } else {
+        document.execCommand("copy");
+        done();
+      }
+    });
+  })();
+</script>

@@ -32,4 +32,17 @@ RSpec.describe DataHealth do
 
     expect(health.report[:consecutive_award_sync_failures]).to eq(2)
   end
+
+  it "lists recent runs of both kinds, newest first, without error text" do
+    create(:sync_run, :succeeded, started_at: now - 3.hours, finished_at: now - 2.hours, records_upserted: 580)
+    create(:sync_run, kind: "end_dates", status: "failed", started_at: now - 1.hour, finished_at: now - 50.minutes,
+                      error: "Faraday::SSLError: secret internals")
+
+    runs = health.recent_runs
+
+    expect(runs.map { |r| r.values_at(:kind, :status) }).to eq([ %w[end_dates failed], %w[awards succeeded] ])
+    expect(runs.last).to include(records: 580, started_at: (now - 3.hours).iso8601)
+    expect(runs.to_s).not_to include("secret internals", "SSLError")
+    expect(health.recent_runs(limit: 1).size).to eq(1)
+  end
 end

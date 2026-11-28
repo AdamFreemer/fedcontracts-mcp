@@ -10,5 +10,5 @@ Rails.application.routes.draw do
   mount McpEndpoint, at: "/mcp"
 
   # Defines the root path route ("/")
-  # root "posts#index"
+  root "pages#home"
 end
