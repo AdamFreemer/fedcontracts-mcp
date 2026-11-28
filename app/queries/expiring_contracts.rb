@@ -1,11 +1,11 @@
 # Contracts with an end date in the next `within_days` days, with the incumbent.
 #
 # Two end dates matter: `end_date` (current period of performance) and
-# `potential_end_date` (if every option is exercised, fetched by EndDateEnricher).
+# `potential_end_date` (if every option is exercised, filled by EndDateSync from bulk downloads).
 # Each result is labeled:
 #   final_period       - the contract's last possible end falls in the window: likely recompete
 #   options_remaining  - the current period ends in the window but options can extend it: likely renewal
-#   unknown            - option status not checked (awards under EndDateEnricher::MIN_AMOUNT)
+#   unknown            - option status not loaded yet (the end-date sync has not covered this award)
 class ExpiringContracts
   DEFAULT_WITHIN_DAYS = 180
   STATUSES = %w[final_period options_remaining unknown].freeze

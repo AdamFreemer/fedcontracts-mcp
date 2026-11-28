@@ -26,27 +26,6 @@ RSpec.describe Usaspending::Client do
     end
   end
 
-  describe "#award" do
-    it "fetches award detail by generated_internal_id" do
-      gid = "CONT_AWD_36C10D21N0007_3600_VA11816D1013_3600"
-      stub_request(:get, "https://api.usaspending.gov/api/v2/awards/#{gid}/")
-        .to_return(json_response_body({ "period_of_performance" => { "potential_end_date" => "2030-09-29 00:00:00" } }))
-
-      expect(client.award(gid).dig("period_of_performance", "potential_end_date")).to eq("2030-09-29 00:00:00")
-    end
-
-    it "retries dropped TLS connections" do
-      stub_request(:get, %r{/api/v2/awards/Y/}).to_raise(Faraday::SSLError.new("SSL_read: unexpected eof")).then
-                                               .to_return(json_response_body({ "ok" => true }))
-      expect(client.award("Y")).to eq("ok" => true)
-    end
-
-    it "retries GETs on 5xx" do
-      stub_request(:get, %r{/api/v2/awards/X/}).to_return({ status: 502 }).then.to_return(json_response_body({ "ok" => true }))
-      expect(client.award("X")).to eq("ok" => true)
-    end
-  end
-
   describe "request shape" do
     it "sends contract type codes, the window, NAICS, and a sort field that is also in fields" do
       stub = stub_request(:post, url).with { |req|
@@ -89,6 +68,12 @@ RSpec.describe Usaspending::Client do
 
       expect { client.spending_by_award(**args) }.to raise_error(Usaspending::Client::Error, /422/)
       expect(a_request(:post, url)).to have_been_made.once
+    end
+
+    it "retries a dropped TLS connection, then succeeds" do
+      stub_request(:post, url).to_raise(Faraday::SSLError.new("SSL_read: unexpected eof")).then
+                              .to_return(json_response(results: [], hasNext: false))
+      expect(client.spending_by_award(**args).results).to eq([])
     end
 
     it "labels dropped connections as likely rate limiting" do

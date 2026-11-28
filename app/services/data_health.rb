@@ -53,7 +53,7 @@ class DataHealth
       consecutive_award_sync_failures: consecutive_failures,
       last_award_sync: run_summary(last_awards),
       last_end_date_run: run_summary(last_end_dates),
-      end_date_backlog: EndDateEnricher.candidates.count,
+      awards_without_end_dates: Award.where(details_checked_at: nil).count,
       awards: Award.count
     }
   end

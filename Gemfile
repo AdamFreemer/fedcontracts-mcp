@@ -36,6 +36,10 @@ gem "faraday-retry", "~> 2.4"
 # Rate limiting for /mcp
 gem "rack-attack", "~> 6.8"
 
+# USAspending bulk downloads arrive as zipped CSV
+gem "rubyzip", "~> 3.7", require: "zip"
+gem "csv", "~> 3.3"
+
 # Use Rack CORS for handling Cross-Origin Resource Sharing (CORS), making cross-origin Ajax possible
 # gem "rack-cors"
 

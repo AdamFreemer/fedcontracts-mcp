@@ -11,6 +11,12 @@ class AwardSync
 
   Result = Data.define(:sync_run, :upserted, :skipped)
 
+  # Adjacent, non-overlapping [start, end] date ranges covering the last `days` days.
+  # Shared with EndDateSync so both read the same slices.
+  def self.windows(days:, today: Date.current)
+    ((today - days)..today).each_slice(WINDOW_DAYS).map { |slice| [ slice.first, slice.last ] }
+  end
+
   def self.naics_codes
     ENV.fetch("SYNC_NAICS", "").split(",").map(&:strip).reject(&:empty?).presence || DEFAULT_NAICS
   end
@@ -47,10 +53,8 @@ class AwardSync
 
   attr_reader :days, :client, :naics_codes, :today, :logger
 
-  # Adjacent, non-overlapping [start, end] date ranges covering the last `days` days.
   def windows
-    range_start = today - days
-    (range_start..today).each_slice(WINDOW_DAYS).map { |slice| [ slice.first, slice.last ] }
+    self.class.windows(days:, today:)
   end
 
   def sync_window(window_start, window_end, abbreviations)

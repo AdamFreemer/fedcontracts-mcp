@@ -12,7 +12,7 @@ module Tools
       - final_period: its last possible end date is in the window. Likely recompete.
       - options_remaining: the current period ends in the window but option years can extend
         it to final_end_date. Likely renewal with the same incumbent, a weaker signal.
-      - unknown: option status not checked (awards under $100k).
+      - unknown: option status not loaded yet (rare; the end-date sync has not covered it).
       Set recompete_only=true to return only final_period contracts.
 
       Coverage: only contracts with activity in about the last 2 years are stored, so a quiet
@@ -44,7 +44,7 @@ module Tools
       summary = "#{result.total_count} contracts ending in the window#{agency_note(result)}; showing #{contracts.size} " \
                 "(#{::ExpiringContracts::STATUSES.map { |s| "#{counts.fetch(s, 0)} #{s}" }.join(', ')})."
       if result.unchecked_count.positive?
-        summary += " #{result.unchecked_count} contracts in the window have unknown option status (not yet checked or under $100k)" \
+        summary += " #{result.unchecked_count} contracts in the window have unknown option status (end dates not loaded yet)" \
                    "#{', so recompete_only may be incomplete' if recompete_only}."
       end
       respond(summary, { total_count: result.total_count, returned: contracts.size, unchecked_count: result.unchecked_count,

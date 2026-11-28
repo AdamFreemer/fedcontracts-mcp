@@ -17,7 +17,7 @@ RSpec.describe "GET /health/data", type: :request do
 
     expect(response).to have_http_status(:ok)
     body = response.parsed_body
-    expect(body).to include("status" => "ok", "age_hours" => 2.0, "awards" => 1, "end_date_backlog" => 1,
+    expect(body).to include("status" => "ok", "age_hours" => 2.0, "awards" => 1, "awards_without_end_dates" => 1,
                             "consecutive_award_sync_failures" => 0)
     expect(body["last_award_sync"]).to include("status" => "succeeded", "records" => 580, "rate_limited" => false)
   end
