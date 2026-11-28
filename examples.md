@@ -47,6 +47,8 @@ hypothesis: the descriptions don't mention DID(IT).
 - `search_awards(keyword: "digital innovation", agency: "DHS")` finds it.
 - `company_profile(name: "Excella")` lists DHS/USCIS as a top agency and
   includes this award.
+- Bulk end-date data confirms a true final end (potential end = current end =
+  2026-10-15).
 - `expiring_contracts(agency: "DHS", within_days: 180)` does **not** list it,
   because it has already ended. A "recently ended" view would catch it.
   That's a possible v2 feature, not in v1 scope.
@@ -75,7 +77,8 @@ teams sit inside large program contracts.
 | Last modified | 2026-02-24 (still active) |
 | NAICS | 541512 |
 | Subawards | **493 reports, $233.1M**, about 47% of obligations |
-| Follow-on order | `36C10D24F0021` "VBA DGIB Support Services", Accenture, $383.7M, GSA vehicle `47QTCK18D0036`, **2023-12-30 to 2026-12-29** |
+| Follow-on order | `36C10D24F0021` "VBA DGIB Support Services", Accenture, $383.7M, GSA vehicle `47QTCK18D0036`, current end **2026-12-29**, potential end **2027-12-29** (option year remaining) |
+| Parent company | Accenture plc (both orders) |
 
 Largest reported subcontractors (first page of subaward reports, by amount):
 Lefant ($80.3M), Four Points Technology ($22.3M), SteerBridge Strategies
@@ -85,9 +88,10 @@ DynaVet Solutions ($6.0M), Gray Digital ($3.4M). Latest report: 2025-06.
 
 **What it shows:**
 - **The program moved vehicles.** A second Accenture order on a GSA vehicle
-  started before the first one lapsed and ends **2026-12-29**, so a
-  follow-on, bridge, or recompete decision on DGIB is imminent. Claude found
-  this order in the headless check; it wasn't in the original research.
+  started before the first one lapsed. Its current period ends **2026-12-29**,
+  but it has an option year to **2027-12-29**, so the likely next event is VA
+  exercising that option, not a recompete. Claude found this order in the
+  headless check; the bulk end-date fill later showed the remaining option.
 - **The current end date misleads.** The award "ended" in 2025 by `end_date`
   but runs to 2030 through option years. `expiring_contracts` keys on the
   current end, so it can flag option renewals as if they were recompetes, and
@@ -105,7 +109,8 @@ DynaVet Solutions ($6.0M), Gray Digital ($3.4M). Latest report: 2025-06.
 - `search_awards(keyword: "Digital GI", days: 3650)` finds the original order;
   `keyword: "DGIB"` finds the follow-on. A 730-day window misses both because
   search filters on signing date (the tool description now says to widen days).
-- `expiring_contracts(agency: "VA")` lists `36C10D24F0021` (ends 2026-12-29).
+- `expiring_contracts(agency: "VA")` lists `36C10D24F0021` as `options_remaining`
+  (final end 2027-12-29); `recompete_only: true` excludes it.
 - `company_profile(name: "Accenture Federal")` includes it as a top VA award.
 - `expiring_contracts(agency: "VA")` lists the original `36C10D21N0007` only
   once its potential end (2030-09-29) falls inside the window.

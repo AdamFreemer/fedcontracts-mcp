@@ -8,15 +8,20 @@ RSpec.describe EndDateSync do
   class FakeDownloader
     attr_reader :windows
 
-    def initialize(rows_by_start = {}, error: nil)
+    # errors: either one error raised for every call, or { window_start => [errors to raise, in order] }.
+    def initialize(rows_by_start = {}, error: nil, errors: {})
       @rows_by_start = rows_by_start
       @error = error
+      @errors = errors
       @windows = []
     end
 
     def each_contract(start_date:, end_date:, naics_codes:, &block)
       @windows << [ start_date, end_date ]
       raise @error if @error
+
+      queued = @errors[start_date]
+      raise queued.shift if queued.present?
 
       @rows_by_start.fetch(start_date, []).each(&block)
     end
@@ -78,12 +83,41 @@ RSpec.describe EndDateSync do
     expect(SyncRun.data_freshness).to be_nil
   end
 
-  it "records a failed run and re-raises, leaving existing end dates alone" do
-    award = create(:award, potential_end_date: Date.new(2030, 1, 1), details_checked_at: 1.day.ago)
+  it "retries a window whose download fails to generate, then succeeds" do
+    award = create(:award)
+    failure = Usaspending::BulkDownload::Error.new("USAspending failed to generate X.zip: An error occurred.")
+    downloader = FakeDownloader.new({ today - 7 => [ row(award.generated_internal_id, potential: "2028-01-01") ] },
+                                    errors: { today - 7 => [ failure ] })
 
-    expect { sync(FakeDownloader.new(error: Usaspending::BulkDownload::TimedOut.new("not ready"))) }
-      .to raise_error(Usaspending::BulkDownload::TimedOut)
-    expect(SyncRun.end_dates.last).to have_attributes(status: "failed", error: /not ready/)
+    result = sync(downloader)
+
+    expect(downloader.windows.size).to eq(2)
+    expect(result.failed_windows).to eq([])
+    expect(award.reload.potential_end_date).to eq(Date.new(2028, 1, 1))
+  end
+
+  it "keeps going past a window that keeps failing, saves the rest, and records a failed run" do
+    good = create(:award)
+    failure = -> { Usaspending::BulkDownload::Error.new("An error occurred.") }
+    first, second = AwardSync.windows(days: 40, today:)
+    downloader = FakeDownloader.new({ second.first => [ row(good.generated_internal_id, potential: "2029-06-30") ] },
+                                    errors: { first.first => [ failure.call, failure.call ] })
+
+    expect { sync(downloader, days: 40) }.to raise_error(described_class::PartialFailure, /1 window\(s\) failed/)
+
+    expect(good.reload.potential_end_date).to eq(Date.new(2029, 6, 30))
+    run = SyncRun.end_dates.last
+    expect(run).to have_attributes(status: "failed", error: /#{first.first}/)
+    expect(run.details["failed_windows"]).to eq([ "#{first.first}..#{first.last}" ])
+  end
+
+  it "stops immediately when USAspending drops connections, leaving existing end dates alone" do
+    award = create(:award, potential_end_date: Date.new(2030, 1, 1), details_checked_at: 1.day.ago)
+    downloader = FakeDownloader.new(error: Usaspending::Client::ConnectionRefused.new("refused or dropped the connection"))
+
+    expect { sync(downloader, days: 65) }.to raise_error(Usaspending::Client::ConnectionRefused)
+    expect(downloader.windows.size).to eq(1)
+    expect(SyncRun.end_dates.last).to have_attributes(status: "failed", error: /refused or dropped/)
     expect(award.reload.potential_end_date).to eq(Date.new(2030, 1, 1))
   end
 
