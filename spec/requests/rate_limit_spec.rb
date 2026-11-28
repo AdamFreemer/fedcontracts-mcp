@@ -19,6 +19,11 @@ RSpec.describe "Rate limiting", :rack_attack, type: :request do
     expect(response).to have_http_status(:ok)
   end
 
+  it "throttles the landing page per IP" do
+    61.times { get "/" }
+    expect(response).to have_http_status(:too_many_requests)
+  end
+
   it "does not throttle the Rails health check" do
     (Rack::Attack::MCP_LIMIT + 5).times { get "/up" }
     expect(response).to have_http_status(:ok)

@@ -4,7 +4,7 @@ _Last updated: 2026-11-27_
 
 ## Current milestone
 
-**Milestone 8** — done. Next: Milestone 9.
+**Milestone 9** — done. Next: Milestone 10 (deploy; needs Adam for account steps).
 
 ## Milestones
 
@@ -19,14 +19,19 @@ _Last updated: 2026-11-27_
 | 6 | MCP endpoint + `search_awards`, verified in Inspector + Claude | done |
 | 7 | Remaining three tools | done |
 | 8 | rack-attack, input clamping, error handling | done |
-| 9 | Landing page | not started |
+| 9 | Landing page | done |
 | 10 | Heroku deploy, backfill, scheduler, prod smoke test | not started |
 | 11 | README, diagram, example prompts, screenshots | not started |
 | 12 | Publish to MCP registry | not started |
 
 ## Next step
 
-Milestone 9: landing page at `/` with connection instructions (Claude, Claude Code, Inspector), example prompts from `examples.md`, and a **public status panel** fed by `DataHealth#report` (sync age with ok/stale badge, award count, end-date backlog, recent sync runs; no error text). Needs HTML rendering in an API-only app (one controller on `ActionController::Base`, or a static page plus `/health/data` fetched by JS).
+Milestone 10: Heroku deploy. Checklist:
+- `Procfile` (web + release per spec); `ruby file: ".ruby-version"` in Gemfile so the buildpack uses 3.3.14 (risk 5).
+- Production `config.hosts` from `MCP_ALLOWED_HOSTS` (the landing page reflects the Host header; escaped, but restrict it anyway). Confirm `request.base_url` is https behind Heroku's router.
+- Adam: create app (Basic dyno or higher, Essential-0 Postgres), set config vars (`RAILS_MASTER_KEY`, `MCP_ALLOWED_HOSTS`), add Heroku Scheduler job `bundle exec rake sync:incremental` daily ~10:00 UTC, sign up an uptime monitor on `/health/data`.
+- First deploy: `heroku run rake sync:backfill` (awards ~16 min, then 25 bulk end-date downloads ~35 min). A one-off dyno is fine for that; watch Essential-0 storage (~110k awards with raw jsonb).
+- Smoke test: `/`, `/health/data`, MCP Inspector against the prod URL, a headless Claude run.
 
 ## Blockers
 
@@ -89,3 +94,6 @@ None.
 - 2026-11-27: M8 `/health/data` is public, so it summarizes failures (status, counts, `rate_limited`) and never echoes error text. 30 req/min/IP.
 - 2026-11-27: M8 rack-attack: `/mcp` 60 req/min/IP (`MCP_RATE_LIMIT_PER_MINUTE`), JSON-RPC-shaped 429 with Retry-After. In-memory store: per process, so limits multiply with dynos/Puma workers. Disabled in specs except `rate_limit_spec`.
 - 2026-11-27: M8 optional `MCP_BEARER_TOKEN` (constant-time compare, 401 + WWW-Authenticate). Transport `max_request_bytes` 64 KiB. String inputs have `maxLength` (keyword/name 200, agency 100).
+- 2026-11-27: Potential end dates now come from USAspending bulk downloads (Adam's call), replacing per-award lookups: one async download per 30-day window (25 for the backfill, 1 daily, ~70–90s each to generate). `EndDateSync` also fills `recipients.parent_name` (spec field, previously always empty). Option status no longer limited to awards >= $100k.
+- 2026-11-27: Not re-architecting the award sync onto bulk downloads for v1. Checked first: CSV descriptions are identical to the search API's (my M3 "truncated at 250" was from a 10-row sample; ~1.5% of descriptions are exactly 250, max is 2,200). The CSV has no USAspending recipient ID (would force re-keying recipients by UEI). Its extra fields (latest action date, total value with options, set-aside/small-business flags, parent award) would be new tool features. Candidate for v1.1.
+- 2026-11-27: M9 built by a background agent in an isolated worktree (separate test DB, port 3002), reviewed and fast-forward merged. `PagesController < ActionController::Base` + ERB + inline CSS, no JS framework or external assets. Tool summaries render from `McpEndpoint::TOOLS`; status panel from `DataHealth#report` / `#recent_runs` (no error text). `/` throttled 60/min/IP.

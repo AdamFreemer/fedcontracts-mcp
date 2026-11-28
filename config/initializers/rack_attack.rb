@@ -13,6 +13,11 @@ class Rack::Attack
     req.ip if req.path == "/health/data"
   end
 
+  # Landing page: a few COUNTs per load. Generous for people, a cap for scrapers.
+  throttle("home/ip", limit: 60, period: 1.minute) do |req|
+    req.ip if req.path == "/"
+  end
+
   # JSON-RPC-shaped 429 with Retry-After, so MCP clients get a readable error.
   self.throttled_responder = lambda do |req|
     match = req.env["rack.attack.match_data"] || {}

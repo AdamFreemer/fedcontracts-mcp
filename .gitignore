@@ -34,3 +34,7 @@
 
 # Claude Code per-user settings
 /.claude/settings.local.json
+
+# Local tool output (Playwright screenshots, agent worktrees)
+/.playwright-mcp/
+/.claude/worktrees/

@@ -46,15 +46,15 @@ CI (`.github/workflows/ci.yml`) runs all four on pushes to `master` and on PRs.
 
 ```sh
 DAYS=30 bin/rails sync:backfill   # quick local dataset (~3.3k awards, ~30s, plus end-date lookups)
-bin/rails sync:backfill           # full 730 days (~102k awards, ~16 min); end-date lookups then run 5,000 at a time
-bin/rails sync:incremental        # last 7 days + end dates for changed awards; what Heroku Scheduler runs daily
-bin/rails sync:end_dates          # just the potential-end-date lookups (EndDateEnricher)
+bin/rails sync:backfill           # full 730 days (~102k awards, ~16 min), then 25 bulk end-date downloads (~35 min)
+bin/rails sync:incremental        # last 7 days + one bulk end-date download; what Heroku Scheduler runs daily
+DAYS=7 bin/rails sync:end_dates   # just the bulk end-date/parent-company fill (EndDateSync); default 730 days
 ```
 
 `SYNC_NAICS=541511,541512` overrides the default IT/software NAICS set. Each run writes a `sync_runs` row; failures keep the error there.
 DoD data lags ~90 days, so recent windows have little or no DoD.
 
-**Never parallelize requests to USAspending.** It resets connections from clients that burst (it blocked our IP once at ~10 req/s).
+**Never parallelize requests to USAspending.** It resets connections from clients that burst (it blocked our IP once at ~10 req/s). Prefer bulk downloads over per-award API calls.
 
 ## Connecting an MCP client
 
@@ -86,13 +86,15 @@ Deployed hostnames must be listed in `MCP_ALLOWED_HOSTS` or the transport return
 - `spec/requests/mcp_spec.rb`: protocol-level specs (handshake, list, call, errors, host check)
 - `app/services/data_health.rb`: freshness/staleness, recent run summaries, backlog; feeds `/health/data`, tool `data_freshness`, and the landing page
 - `app/controllers/health_controller.rb`: `GET /health/data` (200 ok / 503 stale or never synced)
+- `app/controllers/pages_controller.rb` + `app/views/pages/home.html.erb` + `app/views/layouts/pages.html.erb`: the landing page at `/` (the only HTML in this API-only app; inherits `ActionController::Base`)
 - `config/initializers/rack_attack.rb`: per-IP throttles
 - `app/queries/`: query objects, one per tool: `AwardSearch`, `RecentAwards`, `ExpiringContracts`, `CompanyProfile`; shared `AgencyFilter` (abbreviation/acronym/name matching) and `QueryLimits` (clamps)
 - `spec/support/query_fixtures.rb`: fixed-date dataset modeled on `examples.md` for query specs
 - `app/services/usaspending/client.rb`: Faraday client for `spending_by_award` (retries, 25s timeout, page-based; max 50k results per window)
 - `app/services/usaspending/award_mapper.rb`: raw result -> Agency/Recipient/Award attributes keyed by natural keys
 - `app/services/award_sync.rb`: fetches 30-day windows, upserts agencies -> recipients -> awards per page, records `sync_runs`
-- `app/services/end_date_enricher.rb`: fills `awards.potential_end_date` from award detail: sequential and rate-limited (USAspending blocks bursts), soonest-ending first, capped per run, re-checks on upstream change
+- `app/services/usaspending/bulk_download.rb`: async bulk award download (request, poll, stream zip, read the prime contracts CSV)
+- `app/services/end_date_sync.rb`: fills `awards.potential_end_date` and `recipients.parent_name` from bulk downloads, same 30-day windows as `AwardSync`
 - `lib/tasks/sync.rake`: `sync:backfill`, `sync:incremental`
 - `spec/cassettes/usaspending/`: recorded real API responses; `cassette_body(name)` in specs reads one
 
